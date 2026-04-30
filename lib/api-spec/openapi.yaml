@@ -3,13 +3,19 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AgentSeed API — AI agent token platform
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: agents
+    description: Agent CRUD and lifecycle
+  - name: chat
+    description: Agent chat (AI-powered)
+  - name: community
+    description: Votes, tips, supporters
 paths:
   /healthz:
     get:
@@ -24,6 +30,329 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /agents:
+    get:
+      operationId: listAgents
+      tags: [agents]
+      summary: List all agents
+      responses:
+        "200":
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agent"
+    post:
+      operationId: createAgent
+      tags: [agents]
+      summary: Create a new agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAgentBody"
+      responses:
+        "201":
+          description: Created agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Slug already taken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /agents/{slug}:
+    get:
+      operationId: getAgent
+      tags: [agents]
+      summary: Get agent by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /agents/{slug}/messages:
+    get:
+      operationId: getAgentMessages
+      tags: [chat]
+      summary: Get agent chat messages
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentMessage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    post:
+      operationId: sendAgentMessage
+      tags: [chat]
+      summary: Send a message to the agent (SSE stream)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageBody"
+      responses:
+        "200":
+          description: SSE stream of AI response chunks
+          content:
+            text/event-stream: {}
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /agents/{slug}/votes:
+    get:
+      operationId: getAgentVotes
+      tags: [community]
+      summary: Get current vote proposals for agent
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of vote proposals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VoteProposal"
+    post:
+      operationId: submitVote
+      tags: [community]
+      summary: Submit a vote on a proposal
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitVoteBody"
+      responses:
+        "200":
+          description: Updated proposal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoteProposal"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /agents/{slug}/tip:
+    post:
+      operationId: sendTip
+      tags: [community]
+      summary: Send a tip to the agent treasury (mock)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendTipBody"
+      responses:
+        "200":
+          description: Updated treasury info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TreasuryInfo"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /agents/{slug}/support:
+    post:
+      operationId: addSupporter
+      tags: [community]
+      summary: Back an agent (become a supporter)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSupporterBody"
+      responses:
+        "201":
+          description: Supporter added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Supporter"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /agents/{slug}/supporters:
+    get:
+      operationId: getAgentSupporters
+      tags: [community]
+      summary: Get agent supporters
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of supporters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Supporter"
+
+  /agents/{slug}/stats:
+    get:
+      operationId: getAgentStats
+      tags: [agents]
+      summary: Get Proof-of-Usefulness stats for agent
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agent stats and usefulness score
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentStats"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /agents/{slug}/fork:
+    post:
+      operationId: forkAgent
+      tags: [agents]
+      summary: Fork an agent into a specialized child agent
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForkAgentBody"
+      responses:
+        "201":
+          description: New child agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "400":
+          description: Agent not mature enough to fork
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +363,268 @@ components:
       required:
         - status
 
+    Agent:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        mission:
+          type: string
+        personality:
+          type: string
+        tokenSymbol:
+          type: string
+        lifecycleStage:
+          type: string
+          enum: [egg, hatchling, worker, guild]
+        mood:
+          type: string
+          enum: [focused, curious, confident, generous, survival]
+        treasuryBalance:
+          type: number
+        holderCount:
+          type: integer
+        memoryPublic:
+          type: boolean
+        firstTask:
+          type: ["string", "null"]
+        parentSlug:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - slug
+        - name
+        - mission
+        - personality
+        - tokenSymbol
+        - lifecycleStage
+        - mood
+        - treasuryBalance
+        - holderCount
+        - memoryPublic
+        - firstTask
+        - parentSlug
+        - createdAt
+
+    CreateAgentBody:
+      type: object
+      properties:
+        name:
+          type: string
+        mission:
+          type: string
+        personality:
+          type: string
+        tokenSymbol:
+          type: string
+        memoryPublic:
+          type: boolean
+        firstTask:
+          type: string
+      required:
+        - name
+        - mission
+        - personality
+        - tokenSymbol
+
+    AgentMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        agentId:
+          type: integer
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - agentId
+        - role
+        - content
+        - createdAt
+
+    SendMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+        userHandle:
+          type: ["string", "null"]
+      required:
+        - content
+
+    VoteProposal:
+      type: object
+      properties:
+        id:
+          type: integer
+        agentId:
+          type: integer
+        proposal:
+          type: string
+        voteCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - agentId
+        - proposal
+        - voteCount
+        - createdAt
+
+    SubmitVoteBody:
+      type: object
+      properties:
+        proposalId:
+          type: integer
+      required:
+        - proposalId
+
+    SendTipBody:
+      type: object
+      properties:
+        amount:
+          type: number
+        fromHandle:
+          type: ["string", "null"]
+      required:
+        - amount
+
+    TreasuryInfo:
+      type: object
+      properties:
+        treasuryBalance:
+          type: number
+        holderCount:
+          type: integer
+        totalTips:
+          type: integer
+        burnEvents:
+          type: integer
+      required:
+        - treasuryBalance
+        - holderCount
+        - totalTips
+        - burnEvents
+
+    AddSupporterBody:
+      type: object
+      properties:
+        nickname:
+          type: string
+        tokens:
+          type: number
+      required:
+        - nickname
+
+    Supporter:
+      type: object
+      properties:
+        id:
+          type: integer
+        agentId:
+          type: integer
+        nickname:
+          type: string
+        tokens:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - agentId
+        - nickname
+        - tokens
+        - createdAt
+
+    AgentStats:
+      type: object
+      properties:
+        totalMessages:
+          type: integer
+        uniqueSessions:
+          type: integer
+        tipsReceived:
+          type: integer
+        totalTipAmount:
+          type: number
+        activeVotes:
+          type: integer
+        supporterCount:
+          type: integer
+        usefulnessScore:
+          type: integer
+        lifecycleStage:
+          type: string
+        mood:
+          type: string
+        bondingCurvePoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/BondingCurvePoint"
+      required:
+        - totalMessages
+        - uniqueSessions
+        - tipsReceived
+        - totalTipAmount
+        - activeVotes
+        - supporterCount
+        - usefulnessScore
+        - lifecycleStage
+        - mood
+        - bondingCurvePoints
+
+    BondingCurvePoint:
+      type: object
+      properties:
+        t:
+          type: integer
+        price:
+          type: number
+        supply:
+          type: number
+      required:
+        - t
+        - price
+        - supply
+
+    ForkAgentBody:
+      type: object
+      properties:
+        name:
+          type: string
+        mission:
+          type: string
+        tokenSymbol:
+          type: string
+        specialization:
+          type: string
+      required:
+        - name
+        - mission
+        - tokenSymbol
+        - specialization
+
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
