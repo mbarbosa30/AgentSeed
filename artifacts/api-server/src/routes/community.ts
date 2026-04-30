@@ -347,7 +347,10 @@ router.get("/agents/:slug/stats", async (req, res) => {
     .where(eq(supportersTable.agentId, agent.id));
 
   const supporterCount = allSupporters.length;
-  const currentSupply = allSupporters.reduce((acc, s) => acc + s.tokens, 0);
+  const supportersTokens = allSupporters.reduce((acc, s) => acc + s.tokens, 0);
+  const DEFAULT_TOKENS_PER_HOLDER = 100;
+  const anonymousHolders = Math.max(0, agent.holderCount - supporterCount);
+  const currentSupply = supportersTokens + anonymousHolders * DEFAULT_TOKENS_PER_HOLDER;
   const currentPrice = bondingCurvePrice(currentSupply);
 
   const topVote = allVotes.sort((a, b) => b.voteCount - a.voteCount)[0];

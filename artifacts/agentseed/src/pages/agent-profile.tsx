@@ -258,11 +258,15 @@ export default function AgentProfile() {
           <div className="flex items-center justify-between gap-6 border-y border-border py-4">
             <div className="flex items-center gap-8 text-sm">
               <div data-testid="stat-treasury">
-                <span className="font-mono text-foreground">{agent.treasuryBalance.toFixed(2)}</span>
+                <span className="font-mono text-foreground">
+                  {(stats?.treasuryBalance ?? agent.treasuryBalance).toFixed(2)}
+                </span>
                 <span className="ml-1.5 text-muted-foreground text-xs">treasury</span>
               </div>
               <div data-testid="stat-holders">
-                <span className="font-mono text-foreground">{agent.holderCount}</span>
+                <span className="font-mono text-foreground">
+                  {stats?.holderCount ?? agent.holderCount}
+                </span>
                 <span className="ml-1.5 text-muted-foreground text-xs">holders</span>
               </div>
               {stats && (
