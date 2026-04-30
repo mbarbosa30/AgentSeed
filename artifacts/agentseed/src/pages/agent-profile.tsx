@@ -203,49 +203,74 @@ export default function AgentProfile() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-5xl mx-auto px-6 py-8">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setLocation("/")}
-          className="mb-4 gap-1.5 -ml-2"
+          className="mb-6 gap-1.5 -ml-2 text-muted-foreground hover:text-foreground font-normal"
           data-testid="button-back"
         >
-          <ArrowLeft className="w-4 h-4" />
-          All Agents
+          <ArrowLeft className="w-3.5 h-3.5" />
+          All agents
         </Button>
 
-        <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
-          <div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold" data-testid="text-agent-name">{agent.name}</h1>
-              <span className="font-mono text-lg text-accent font-bold" data-testid="text-token-symbol">
-                ${agent.tokenSymbol}
-              </span>
-              <LifecycleBadge stage={agent.lifecycleStage} size="md" />
-              <MoodBadge mood={agent.mood} size="md" />
-            </div>
-            <p className="text-muted-foreground mt-1 max-w-xl" data-testid="text-mission">
-              {agent.mission}
-            </p>
+        <div className="mb-8">
+          <div className="flex items-baseline gap-3 flex-wrap mb-2">
+            <h1 className="text-[28px] font-semibold tracking-tight" data-testid="text-agent-name">
+              {agent.name}
+            </h1>
+            <span className="font-mono text-sm text-muted-foreground" data-testid="text-token-symbol">
+              ${agent.tokenSymbol}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 mb-4">
+            <LifecycleBadge stage={agent.lifecycleStage} />
+            <MoodBadge mood={agent.mood} />
             {agent.parentSlug && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Forked from{" "}
+              <span className="text-xs text-muted-foreground">
+                · forked from{" "}
                 <a
                   href={`/agent/${agent.parentSlug}`}
-                  className="text-primary hover:underline"
+                  className="underline-offset-4 hover:underline text-foreground"
                   data-testid="link-parent"
                 >
                   {agent.parentSlug}
                 </a>
-              </p>
+              </span>
             )}
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs text-muted-foreground font-mono truncate max-w-xs">{profileUrl}</span>
+          </div>
+
+          <p className="text-[15px] text-muted-foreground leading-relaxed max-w-2xl mb-6" data-testid="text-mission">
+            {agent.mission}
+          </p>
+
+          <div className="flex items-center justify-between gap-6 border-y border-border py-4">
+            <div className="flex items-center gap-8 text-sm">
+              <div data-testid="stat-treasury">
+                <span className="font-mono text-foreground">{agent.treasuryBalance.toFixed(2)}</span>
+                <span className="ml-1.5 text-muted-foreground text-xs">treasury</span>
+              </div>
+              <div data-testid="stat-holders">
+                <span className="font-mono text-foreground">{agent.holderCount}</span>
+                <span className="ml-1.5 text-muted-foreground text-xs">holders</span>
+              </div>
+              {stats && (
+                <div data-testid="stat-usefulness">
+                  <span className="font-mono text-foreground">{stats.usefulnessScore}</span>
+                  <span className="ml-1.5 text-muted-foreground text-xs">usefulness</span>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-muted-foreground font-mono truncate max-w-[200px] hidden sm:inline">
+                {profileUrl.replace(/^https?:\/\//, "")}
+              </span>
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-6 w-6"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
                 onClick={() => setShowQr((v) => !v)}
                 title="Show QR code"
                 data-testid="button-show-qr"
@@ -253,32 +278,13 @@ export default function AgentProfile() {
                 <QrCode className="w-3.5 h-3.5" />
               </Button>
             </div>
-            {showQr && (
-              <div className="mt-3 p-3 bg-white rounded-lg inline-block" data-testid="qr-code">
-                <QRCodeSVG value={profileUrl} size={128} />
-              </div>
-            )}
           </div>
 
-          <div className="flex items-center gap-3 text-sm">
-            <div className="flex flex-col items-center bg-card border border-border rounded-xl px-4 py-2" data-testid="stat-treasury">
-              <Coins className="w-4 h-4 text-accent mb-0.5" />
-              <span className="font-bold text-accent">{agent.treasuryBalance.toFixed(2)}</span>
-              <span className="text-muted-foreground text-xs">treasury</span>
+          {showQr && (
+            <div className="mt-4 p-4 bg-card border border-border rounded-lg inline-block" data-testid="qr-code">
+              <QRCodeSVG value={profileUrl} size={128} />
             </div>
-            <div className="flex flex-col items-center bg-card border border-border rounded-xl px-4 py-2" data-testid="stat-holders">
-              <Users className="w-4 h-4 text-primary mb-0.5" />
-              <span className="font-bold">{agent.holderCount}</span>
-              <span className="text-muted-foreground text-xs">holders</span>
-            </div>
-            {stats && (
-              <div className="flex flex-col items-center bg-card border border-border rounded-xl px-4 py-2" data-testid="stat-usefulness">
-                <Trophy className="w-4 h-4 text-yellow-400 mb-0.5" />
-                <span className="font-bold">{stats.usefulnessScore}</span>
-                <span className="text-muted-foreground text-xs">score</span>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         <Tabs defaultValue="chat" className="w-full">

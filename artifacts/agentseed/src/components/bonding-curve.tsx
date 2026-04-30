@@ -43,13 +43,13 @@ export function BondingCurve({ points, currentSupply = 0 }: BondingCurveProps) {
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ maxHeight: 120 }}>
         <defs>
           <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(263,70%,65%)" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="hsl(263,70%,65%)" stopOpacity="0.02" />
+            <stop offset="0%" stopColor="hsl(220,13%,13%)" stopOpacity="0.08" />
+            <stop offset="100%" stopColor="hsl(220,13%,13%)" stopOpacity="0" />
           </linearGradient>
         </defs>
 
         <path d={fillD} fill="url(#curveGradient)" />
-        <path d={pathD} fill="none" stroke="hsl(263,70%,65%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={pathD} fill="none" stroke="hsl(220,13%,13%)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
 
         {priceLabels.map(({ y, label }) => (
           <text
@@ -59,14 +59,14 @@ export function BondingCurve({ points, currentSupply = 0 }: BondingCurveProps) {
             textAnchor="end"
             dominantBaseline="middle"
             fontSize="8"
-            fill="hsl(215,20%,55%)"
+            fill="hsl(220,9%,46%)"
           >
             {label}
           </text>
         ))}
 
-        <text x={padding.left} y={height - 4} fontSize="8" fill="hsl(215,20%,55%)">0</text>
-        <text x={width - padding.right} y={height - 4} fontSize="8" fill="hsl(215,20%,55%)" textAnchor="end">
+        <text x={padding.left} y={height - 4} fontSize="8" fill="hsl(220,9%,46%)">0</text>
+        <text x={width - padding.right} y={height - 4} fontSize="8" fill="hsl(220,9%,46%)" textAnchor="end">
           {maxSupply}
         </text>
 
@@ -77,11 +77,12 @@ export function BondingCurve({ points, currentSupply = 0 }: BondingCurveProps) {
               y1={padding.top}
               x2={currentX}
               y2={padding.top + plotH}
-              stroke="hsl(188,90%,52%)"
+              stroke="hsl(220,13%,13%)"
+              strokeOpacity="0.4"
               strokeWidth="1"
               strokeDasharray="3,2"
             />
-            <circle cx={currentX} cy={currentY} r="3" fill="hsl(188,90%,52%)" />
+            <circle cx={currentX} cy={currentY} r="3" fill="hsl(220,13%,13%)" />
           </>
         )}
       </svg>

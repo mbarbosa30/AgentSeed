@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Zap, Cpu, TrendingUp, Users } from "lucide-react";
+import { ArrowRight, Cpu } from "lucide-react";
 import {
   useListAgents,
   useCreateAgent,
@@ -109,66 +109,65 @@ export default function Home() {
       <Navbar />
 
       {!showForm && (
-        <section className="relative overflow-hidden border-b border-border/30">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
-          <div className="max-w-6xl mx-auto px-4 py-16 md:py-24">
+        <section className="border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 py-20 md:py-28">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary font-medium mb-6">
-                <Zap className="w-3 h-3" />
-                Turn ideas into economic organisms
+              <div className="inline-flex items-center gap-2 text-[12px] text-muted-foreground font-mono mb-8">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                v0.1 — agents protocol
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                Launch your AI agent<br />
-                <span className="text-primary">in 60 seconds</span>
+              <h1 className="text-[40px] md:text-[52px] leading-[1.05] font-semibold tracking-tight text-foreground mb-5">
+                Launch an AI agent with its own economy.
               </h1>
-              <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-                Every agent has a brain, a token, a treasury, and a community.
-                Watch it grow from egg to guild as people interact, tip, and vote.
+              <p className="text-[16px] text-muted-foreground leading-relaxed mb-10 max-w-xl">
+                Each agent comes with memory, a token, a treasury, and a community
+                that shapes how it evolves — from a quiet beginning to a full guild.
               </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Button
                   data-testid="button-create-agent"
                   size="lg"
                   onClick={() => setShowForm(true)}
-                  className="gap-2"
+                  className="gap-1.5"
                 >
-                  <Zap className="w-4 h-4" />
-                  Create an Agent
+                  Create an agent
+                  <ArrowRight className="w-4 h-4" />
                 </Button>
                 <Button
                   data-testid="button-view-agents"
                   size="lg"
-                  variant="outline"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground"
                   onClick={() => document.getElementById("agents-grid")?.scrollIntoView({ behavior: "smooth" })}
                 >
-                  Browse Agents
+                  Browse agents
                 </Button>
               </div>
-              <div className="flex gap-6 mt-10 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <Cpu className="w-4 h-4 text-primary" />
-                  AI-powered brain
+              <dl className="grid grid-cols-3 gap-8 mt-16 max-w-md border-t border-border pt-8">
+                <div>
+                  <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Brain</dt>
+                  <dd className="text-sm text-foreground">AI-powered</dd>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-accent" />
-                  Bonding curve token
+                <div>
+                  <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Token</dt>
+                  <dd className="text-sm text-foreground">Bonding curve</dd>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Users className="w-4 h-4" />
-                  Community governance
+                <div>
+                  <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Governance</dt>
+                  <dd className="text-sm text-foreground">Community-led</dd>
                 </div>
-              </div>
+              </dl>
             </div>
           </div>
         </section>
       )}
 
       {showForm && (
-        <section className="max-w-xl mx-auto px-4 py-10">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold">Create your agent</h2>
-            <p className="text-muted-foreground text-sm mt-1">
-              Define its identity and it will be live instantly.
+        <section className="max-w-xl mx-auto px-6 py-12">
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold tracking-tight">Create your agent</h2>
+            <p className="text-muted-foreground text-sm mt-1.5">
+              Define its identity. It will be live instantly.
             </p>
           </div>
 
@@ -324,7 +323,7 @@ export default function Home() {
                   disabled={createAgent.isPending}
                   className="flex-1"
                 >
-                  {createAgent.isPending ? "Launching…" : "🚀 Launch Agent"}
+                  {createAgent.isPending ? "Launching…" : "Launch agent"}
                 </Button>
                 <Button
                   type="button"

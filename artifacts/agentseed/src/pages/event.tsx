@@ -1,11 +1,8 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import {
-  RadioTower,
-  Zap,
   Bot,
   Send,
-  Users,
   ArrowLeft,
   QrCode,
 } from "lucide-react";
@@ -28,11 +25,11 @@ const SCOUT_SLUG = "agents-day-scout";
 const apiBase = import.meta.env.VITE_API_URL ?? "";
 
 const LIVE_FEED_ITEMS = [
-  { id: 1, text: "Nexus joined the network", time: "2m ago", icon: "🌐" },
-  { id: 2, text: "$SCOUT tip: 50 tokens", time: "5m ago", icon: "💸" },
-  { id: 3, text: "New supporter: @cryptobob", time: "8m ago", icon: "❤️" },
-  { id: 4, text: "Vote: Expand memory scope", time: "12m ago", icon: "🗳️" },
-  { id: 5, text: "Scout leveled up: Hatchling!", time: "20m ago", icon: "🐣" },
+  { id: 1, label: "join", text: "Nexus joined the network", time: "2m" },
+  { id: 2, label: "tip", text: "$SCOUT tip: 50 tokens", time: "5m" },
+  { id: 3, label: "support", text: "New supporter: @cryptobob", time: "8m" },
+  { id: 4, label: "vote", text: "Expand memory scope", time: "12m" },
+  { id: 5, label: "level", text: "Scout reached Hatchling", time: "20m" },
 ];
 
 export default function EventMode() {
@@ -135,69 +132,62 @@ export default function EventMode() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="border-b border-border/50 bg-background/90 backdrop-blur-sm px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="border-b border-border bg-background px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-4">
           <Link href="/">
-              <Button variant="ghost" size="sm" className="gap-1.5 -ml-2">
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Home
-              </Button>
+            <Button variant="ghost" size="sm" className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground font-normal">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Home
+            </Button>
           </Link>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="font-bold text-sm">
-              Agent<span className="text-primary">Seed</span>{" "}
-              <span className="text-muted-foreground font-normal">Event Mode</span>
-            </span>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-semibold tracking-tight">AgentSeed</span>
+            <span className="text-muted-foreground">/ event mode</span>
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <RadioTower className="w-3.5 h-3.5 text-green-400" />
-          <span>Agents Day Lisbon — Live</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span>Agents Day Lisbon — live</span>
         </div>
       </div>
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0 overflow-hidden" style={{ height: "calc(100vh - 53px)" }}>
-        <div className="flex flex-col border-r border-border/30 overflow-hidden">
-          <div className="border-b border-border/30 px-6 py-4">
+        <div className="flex flex-col border-r border-border overflow-hidden">
+          <div className="border-b border-border px-6 py-5">
             {agent ? (
               <div className="flex items-center gap-4 flex-wrap">
-                <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
-                  <Bot className="w-6 h-6 text-primary" />
-                </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-bold text-lg" data-testid="text-scout-name">{agent.name}</h2>
-                    <span className="font-mono text-sm text-accent font-bold">${agent.tokenSymbol}</span>
+                  <div className="flex items-baseline gap-2">
+                    <h2 className="font-semibold text-lg tracking-tight" data-testid="text-scout-name">{agent.name}</h2>
+                    <span className="font-mono text-xs text-muted-foreground">${agent.tokenSymbol}</span>
                   </div>
-                  <div className="flex gap-1.5 mt-0.5">
+                  <div className="flex gap-1.5 mt-1.5">
                     <LifecycleBadge stage={agent.lifecycleStage} />
                     <MoodBadge mood={agent.mood} />
                   </div>
                 </div>
                 {stats && (
-                  <div className="ml-auto flex gap-4 text-sm">
-                    <div className="text-center">
-                      <div className="font-bold text-primary">{stats.totalMessages}</div>
-                      <div className="text-muted-foreground text-xs">messages</div>
+                  <div className="ml-auto flex gap-6 text-sm">
+                    <div>
+                      <span className="font-mono">{stats.totalMessages}</span>
+                      <span className="ml-1.5 text-muted-foreground text-xs">messages</span>
                     </div>
-                    <div className="text-center">
-                      <div className="font-bold text-accent">{stats.usefulnessScore}</div>
-                      <div className="text-muted-foreground text-xs">score</div>
+                    <div>
+                      <span className="font-mono">{stats.usefulnessScore}</span>
+                      <span className="ml-1.5 text-muted-foreground text-xs">usefulness</span>
                     </div>
-                    <div className="text-center">
-                      <div className="font-bold">{stats.supporterCount}</div>
-                      <div className="text-muted-foreground text-xs">backers</div>
+                    <div>
+                      <span className="font-mono">{stats.supporterCount}</span>
+                      <span className="ml-1.5 text-muted-foreground text-xs">backers</span>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-muted/30 animate-pulse" />
                 <div>
-                  <div className="h-5 w-36 bg-muted/30 rounded animate-pulse mb-1" />
-                  <div className="h-3 w-24 bg-muted/30 rounded animate-pulse" />
+                  <div className="h-5 w-36 bg-muted rounded animate-pulse mb-1" />
+                  <div className="h-3 w-24 bg-muted rounded animate-pulse" />
                 </div>
               </div>
             )}
@@ -220,12 +210,12 @@ export default function EventMode() {
 
           {agent && (
             <>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {messages.length === 0 && !streaming && (
-                  <div className="text-center py-8" data-testid="text-event-empty">
-                    <div className="text-4xl mb-3">🤖</div>
+                  <div className="text-center py-12" data-testid="text-event-empty">
+                    <Bot className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-30" />
                     <p className="text-muted-foreground text-sm">
-                      Ask Scout about anything — agents, tokens, the Lisbon hackathon!
+                      Ask Scout about anything — agents, tokens, the Lisbon hackathon.
                     </p>
                   </div>
                 )}
@@ -236,13 +226,13 @@ export default function EventMode() {
                     data-testid={`event-msg-${msg.role}`}
                   >
                     {msg.role === "assistant" && (
-                      <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0 mt-0.5">
-                        <Bot className="w-4 h-4 text-primary" />
+                      <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">
+                        <Bot className="w-3.5 h-3.5 text-muted-foreground" />
                       </div>
                     )}
-                    <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-secondary text-foreground rounded-bl-sm"}`}>
+                    <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${msg.role === "user" ? "bg-foreground text-background rounded-br-md" : "bg-secondary text-foreground rounded-bl-md"}`}>
                       {msg.role === "user" && (
-                        <div className="text-xs opacity-70 mb-1">@{handle}</div>
+                        <div className="text-[11px] opacity-60 mb-0.5">@{handle}</div>
                       )}
                       {msg.content}
                     </div>
@@ -250,12 +240,12 @@ export default function EventMode() {
                 ))}
                 {streaming && streamText && (
                   <div className="flex gap-3 justify-start">
-                    <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0 mt-0.5">
-                      <Bot className="w-4 h-4 text-primary" />
+                    <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">
+                      <Bot className="w-3.5 h-3.5 text-muted-foreground" />
                     </div>
-                    <div className="max-w-[80%] rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm bg-secondary">
+                    <div className="max-w-[80%] rounded-2xl rounded-bl-md px-4 py-2.5 text-sm bg-secondary leading-relaxed">
                       {streamText}
-                      <span className="inline-block w-1 h-4 bg-primary/70 ml-0.5 animate-pulse rounded-full" />
+                      <span className="inline-block w-1 h-4 bg-foreground/70 ml-0.5 animate-pulse rounded-full" />
                     </div>
                   </div>
                 )}
@@ -296,34 +286,35 @@ export default function EventMode() {
           )}
         </div>
 
-        <div className="overflow-y-auto bg-card/30 flex flex-col">
-          <div className="p-4 border-b border-border/30">
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-primary" />
-              Live Activity
+        <div className="overflow-y-auto bg-secondary/30 flex flex-col">
+          <div className="px-4 py-3 border-b border-border">
+            <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              Live activity
             </h3>
           </div>
-          <div className="p-3 space-y-2 flex-1">
+          <div className="px-4 py-3 space-y-3 flex-1">
             {LIVE_FEED_ITEMS.map((item) => (
               <div
                 key={item.id}
-                className="flex items-start gap-2 p-2.5 rounded-lg bg-background/50 border border-border/30 text-sm"
+                className="flex items-start gap-3 text-sm"
                 data-testid={`feed-item-${item.id}`}
               >
-                <span className="text-base">{item.icon}</span>
-                <div>
+                <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground bg-background border border-border rounded px-1.5 py-0.5 mt-0.5 shrink-0 min-w-[56px] text-center">
+                  {item.label}
+                </span>
+                <div className="flex-1 min-w-0">
                   <div className="text-foreground">{item.text}</div>
-                  <div className="text-xs text-muted-foreground">{item.time}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{item.time} ago</div>
                 </div>
               </div>
             ))}
           </div>
 
           {stats?.bondingCurvePoints && (
-            <div className="p-4 border-t border-border/30">
-              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <span className="font-mono text-accent text-xs">$SCOUT</span>
-                Bonding Curve
+            <div className="px-4 py-4 border-t border-border">
+              <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+                <span>Bonding curve</span>
+                <span className="font-mono text-muted-foreground/60">${agent?.tokenSymbol}</span>
               </h3>
               <BondingCurve
                 points={stats.bondingCurvePoints}
@@ -332,16 +323,15 @@ export default function EventMode() {
             </div>
           )}
 
-          <div className="p-4 border-t border-border/30">
-            <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-              <Users className="w-3.5 h-3.5 text-pink-400" />
-              Top Supporters
+          <div className="px-4 py-4 border-t border-border">
+            <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-3">
+              Top supporters
             </h3>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {supporters.slice(0, 5).map((s) => (
-                <div key={s.id} className="flex justify-between text-xs" data-testid={`event-supporter-${s.id}`}>
-                  <span className="text-muted-foreground">@{s.nickname}</span>
-                  <span className="font-mono text-accent">{s.tokens}</span>
+                <div key={s.id} className="flex justify-between text-sm" data-testid={`event-supporter-${s.id}`}>
+                  <span className="text-foreground">@{s.nickname}</span>
+                  <span className="font-mono text-muted-foreground text-xs">{s.tokens}</span>
                 </div>
               ))}
               {supporters.length === 0 && (
@@ -350,21 +340,21 @@ export default function EventMode() {
             </div>
           </div>
 
-          <div className="p-4 border-t border-border/30">
+          <div className="px-4 py-4 border-t border-border">
             <button
-              className="flex items-center gap-2 text-sm font-semibold mb-2 hover:text-primary transition-colors w-full"
+              className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors w-full mb-2"
               onClick={() => setShowQr((v) => !v)}
               data-testid="button-event-qr"
             >
-              <QrCode className="w-3.5 h-3.5" />
-              Scan to Chat with Scout
+              <QrCode className="w-3 h-3" />
+              Scan to chat with Scout
             </button>
             {showQr && (
-              <div className="flex flex-col items-center gap-2">
-                <div className="bg-white rounded-lg p-2 inline-block" data-testid="event-qr-code">
+              <div className="flex flex-col items-center gap-2 mt-3">
+                <div className="bg-white rounded-md p-2 inline-block border border-border" data-testid="event-qr-code">
                   <QRCodeSVG value={scoutUrl} size={120} />
                 </div>
-                <p className="text-xs text-muted-foreground text-center break-all">{scoutUrl}</p>
+                <p className="text-[11px] text-muted-foreground text-center break-all font-mono">{scoutUrl.replace(/^https?:\/\//, "")}</p>
               </div>
             )}
           </div>

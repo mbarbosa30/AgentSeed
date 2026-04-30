@@ -1,43 +1,45 @@
 import { Link, useLocation } from "wouter";
-import { Zap, RadioTower } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   const [location] = useLocation();
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-sm">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+    <nav className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-md">
+      <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
         <Link
           href="/"
-          className="flex items-center gap-2 group"
+          className="flex items-center gap-2"
           data-testid="nav-logo"
         >
-          <div className="w-7 h-7 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-            <Zap className="w-4 h-4 text-primary" />
-          </div>
-          <span className="font-bold text-base tracking-tight text-foreground">
-            Agent<span className="text-primary">Seed</span>
+          <span className="font-semibold text-[15px] tracking-tight text-foreground">
+            AgentSeed
+          </span>
+          <span className="hidden sm:inline text-xs text-muted-foreground font-normal">
+            / agents protocol
           </span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Link href="/event" data-testid="nav-event">
             <Button
-              variant={location === "/event" ? "default" : "ghost"}
+              variant="ghost"
               size="sm"
-              className="gap-1.5"
+              className={`text-sm font-normal ${
+                location === "/event"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <RadioTower className="w-3.5 h-3.5" />
-              Event Mode
+              Event mode
             </Button>
           </Link>
           <Link href="/" data-testid="nav-create">
             <Button
-              variant={location === "/" ? "default" : "outline"}
               size="sm"
+              className="text-sm h-8"
             >
-              + Create Agent
+              Create agent
             </Button>
           </Link>
         </div>

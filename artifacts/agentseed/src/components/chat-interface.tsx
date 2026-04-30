@@ -15,10 +15,13 @@ export function ChatInterface({ slug, messages, onNewMessage, apiBase }: ChatInt
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = scrollContainerRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
   }, [messages, streamText]);
 
   const send = async () => {
@@ -96,7 +99,7 @@ export function ChatInterface({ slug, messages, onNewMessage, apiBase }: ChatInt
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto space-y-4 p-4">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto space-y-4 p-4">
         {allMessages.length === 0 && !streaming && (
           <div className="text-center text-muted-foreground text-sm py-8" data-testid="text-chat-empty">
             <Bot className="w-8 h-8 mx-auto mb-2 opacity-30" />
@@ -110,22 +113,22 @@ export function ChatInterface({ slug, messages, onNewMessage, apiBase }: ChatInt
             data-testid={`msg-${msg.role}-${msg.id}`}
           >
             {msg.role === "assistant" && (
-              <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0 mt-0.5">
-                <Bot className="w-4 h-4 text-primary" />
+              <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">
+                <Bot className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
             )}
             <div
               className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                 msg.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-br-sm"
-                  : "bg-secondary text-foreground rounded-bl-sm"
+                  ? "bg-foreground text-background rounded-br-md"
+                  : "bg-secondary text-foreground rounded-bl-md"
               }`}
             >
               {msg.content}
             </div>
             {msg.role === "user" && (
-              <div className="w-7 h-7 rounded-full bg-muted border border-border flex items-center justify-center shrink-0 mt-0.5">
-                <User className="w-4 h-4 text-muted-foreground" />
+              <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">
+                <User className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
             )}
           </div>
@@ -133,30 +136,28 @@ export function ChatInterface({ slug, messages, onNewMessage, apiBase }: ChatInt
 
         {streaming && streamText && (
           <div className="flex gap-3 justify-start" data-testid="msg-streaming">
-            <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0 mt-0.5">
-              <Bot className="w-4 h-4 text-primary" />
+            <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">
+              <Bot className="w-3.5 h-3.5 text-muted-foreground" />
             </div>
-            <div className="max-w-[80%] rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm bg-secondary text-foreground leading-relaxed">
+            <div className="max-w-[80%] rounded-2xl rounded-bl-md px-4 py-2.5 text-sm bg-secondary text-foreground leading-relaxed">
               {streamText}
-              <span className="inline-block w-1 h-4 bg-primary/70 ml-0.5 animate-pulse rounded-full" />
+              <span className="inline-block w-1 h-4 bg-foreground/70 ml-0.5 animate-pulse rounded-full" />
             </div>
           </div>
         )}
 
         {streaming && !streamText && (
           <div className="flex gap-3 justify-start" data-testid="msg-loading">
-            <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
-              <Bot className="w-4 h-4 text-primary animate-pulse" />
+            <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
+              <Bot className="w-3.5 h-3.5 text-muted-foreground animate-pulse" />
             </div>
-            <div className="rounded-2xl rounded-bl-sm px-4 py-3 bg-secondary flex gap-1.5 items-center">
+            <div className="rounded-2xl rounded-bl-md px-4 py-3 bg-secondary flex gap-1.5 items-center">
               <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
               <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
               <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
             </div>
           </div>
         )}
-
-        <div ref={bottomRef} />
       </div>
 
       <div className="border-t border-border p-4">
