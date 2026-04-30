@@ -123,6 +123,11 @@ router.post("/agents/:slug/fork", async (req, res) => {
     return;
   }
 
+  if (parent.lifecycleStage !== "guild") {
+    res.status(403).json({ error: "Only Guild-stage agents can be forked" });
+    return;
+  }
+
   let baseSlug = slugify(body.name);
   if (!baseSlug) baseSlug = "agent";
   let childSlug = baseSlug;

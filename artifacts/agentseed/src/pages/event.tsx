@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
 import {
   RadioTower,
@@ -7,7 +7,9 @@ import {
   Send,
   Users,
   ArrowLeft,
+  QrCode,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import {
   useGetAgent,
   useGetAgentStats,
@@ -39,6 +41,10 @@ export default function EventMode() {
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
   const [handle, setHandle] = useState("visitor");
+  const [showQr, setShowQr] = useState(false);
+  const scoutUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/agent/${SCOUT_SLUG}`
+    : `/agent/${SCOUT_SLUG}`;
 
   const { data: agent } = useGetAgent(SCOUT_SLUG, {
     query: {
@@ -342,6 +348,25 @@ export default function EventMode() {
                 <p className="text-xs text-muted-foreground">No supporters yet</p>
               )}
             </div>
+          </div>
+
+          <div className="p-4 border-t border-border/30">
+            <button
+              className="flex items-center gap-2 text-sm font-semibold mb-2 hover:text-primary transition-colors w-full"
+              onClick={() => setShowQr((v) => !v)}
+              data-testid="button-event-qr"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              Scan to Chat with Scout
+            </button>
+            {showQr && (
+              <div className="flex flex-col items-center gap-2">
+                <div className="bg-white rounded-lg p-2 inline-block" data-testid="event-qr-code">
+                  <QRCodeSVG value={scoutUrl} size={120} />
+                </div>
+                <p className="text-xs text-muted-foreground text-center break-all">{scoutUrl}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

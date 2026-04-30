@@ -156,6 +156,7 @@ export const SendTipResponse = zod.object({
   holderCount: zod.number(),
   totalTips: zod.number(),
   burnEvents: zod.number(),
+  isBuybackTip: zod.boolean(),
 });
 
 /**
@@ -198,13 +199,18 @@ export const GetAgentStatsParams = zod.object({
 export const GetAgentStatsResponse = zod.object({
   totalMessages: zod.number(),
   uniqueSessions: zod.number(),
+  tasksCompleted: zod.number(),
   tipsReceived: zod.number(),
   totalTipAmount: zod.number(),
+  buybackBurnEvents: zod.number(),
   activeVotes: zod.number(),
   supporterCount: zod.number(),
+  topVoteProposal: zod.string().nullish(),
+  topVoteCount: zod.number(),
   usefulnessScore: zod.number(),
   lifecycleStage: zod.string(),
   mood: zod.string(),
+  memoryHighlights: zod.array(zod.string()),
   bondingCurvePoints: zod.array(
     zod.object({
       t: zod.number(),

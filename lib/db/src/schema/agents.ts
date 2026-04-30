@@ -16,6 +16,7 @@ export const agentsTable = pgTable("agents", {
   memoryPublic: boolean("memory_public").notNull().default(true),
   firstTask: text("first_task"),
   parentSlug: text("parent_slug"),
+  memoryHighlights: text("memory_highlights").array().notNull().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

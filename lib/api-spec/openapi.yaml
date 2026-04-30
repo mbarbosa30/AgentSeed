@@ -513,14 +513,17 @@ components:
         holderCount:
           type: integer
         totalTips:
-          type: integer
+          type: number
         burnEvents:
           type: integer
+        isBuybackTip:
+          type: boolean
       required:
         - treasuryBalance
         - holderCount
         - totalTips
         - burnEvents
+        - isBuybackTip
 
     AddSupporterBody:
       type: object
@@ -560,13 +563,22 @@ components:
           type: integer
         uniqueSessions:
           type: integer
+        tasksCompleted:
+          type: integer
         tipsReceived:
           type: integer
         totalTipAmount:
           type: number
+        buybackBurnEvents:
+          type: integer
         activeVotes:
           type: integer
         supporterCount:
+          type: integer
+        topVoteProposal:
+          type: string
+          nullable: true
+        topVoteCount:
           type: integer
         usefulnessScore:
           type: integer
@@ -574,6 +586,10 @@ components:
           type: string
         mood:
           type: string
+        memoryHighlights:
+          type: array
+          items:
+            type: string
         bondingCurvePoints:
           type: array
           items:
@@ -581,13 +597,17 @@ components:
       required:
         - totalMessages
         - uniqueSessions
+        - tasksCompleted
         - tipsReceived
         - totalTipAmount
+        - buybackBurnEvents
         - activeVotes
         - supporterCount
+        - topVoteCount
         - usefulnessScore
         - lifecycleStage
         - mood
+        - memoryHighlights
         - bondingCurvePoints
 
     BondingCurvePoint:

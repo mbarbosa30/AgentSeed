@@ -102,6 +102,7 @@ export interface TreasuryInfo {
   holderCount: number;
   totalTips: number;
   burnEvents: number;
+  isBuybackTip: boolean;
 }
 
 export interface AddSupporterBody {
@@ -126,13 +127,18 @@ export interface BondingCurvePoint {
 export interface AgentStats {
   totalMessages: number;
   uniqueSessions: number;
+  tasksCompleted: number;
   tipsReceived: number;
   totalTipAmount: number;
+  buybackBurnEvents: number;
   activeVotes: number;
   supporterCount: number;
+  topVoteProposal?: string | null;
+  topVoteCount: number;
   usefulnessScore: number;
   lifecycleStage: string;
   mood: string;
+  memoryHighlights: string[];
   bondingCurvePoints: BondingCurvePoint[];
 }
 

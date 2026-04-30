@@ -10,7 +10,11 @@ import {
   Zap,
   ChevronUp,
   Heart,
+  Brain,
+  QrCode,
+  Lock,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import {
   useGetAgent,
   useGetAgentMessages,
@@ -55,7 +59,11 @@ export default function AgentProfile() {
   const [forkToken, setForkToken] = useState("");
   const [forkMission, setForkMission] = useState("");
   const [forkSpec, setForkSpec] = useState("");
-  const [showFork, setShowFork] = useState(false);
+  const [showQr, setShowQr] = useState(false);
+
+  const profileUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/agent/${slug}`
+    : `/agent/${slug}`;
 
   const { data: agent, isLoading: agentLoading } = useGetAgent(slug, {
     query: { queryKey: getGetAgentQueryKey(slug) },
@@ -98,6 +106,7 @@ export default function AgentProfile() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetAgentVotesQueryKey(slug) });
+        queryClient.invalidateQueries({ queryKey: getGetAgentStatsQueryKey(slug) });
         toast({ title: "Vote cast!" });
       },
     },
@@ -108,9 +117,10 @@ export default function AgentProfile() {
       onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: getGetAgentQueryKey(slug) });
         queryClient.invalidateQueries({ queryKey: getGetAgentStatsQueryKey(slug) });
+        const extra = data.isBuybackTip ? " 🔥 Buyback burn triggered!" : "";
         toast({
-          title: `Tip sent! Treasury: ${data.treasuryBalance.toFixed(2)}`,
-          description: `${data.burnEvents} burn events so far`,
+          title: `Tip sent! Treasury: ${data.treasuryBalance.toFixed(2)}${extra}`,
+          description: `${data.burnEvents} buyback burns so far`,
         });
       },
     },
@@ -133,6 +143,9 @@ export default function AgentProfile() {
         toast({ title: `${child.name} forked!`, description: `$${child.tokenSymbol} created` });
         setLocation(`/agent/${child.slug}`);
       },
+      onError: () => {
+        toast({ title: "Fork failed", description: "Only Guild-stage agents can be forked", variant: "destructive" });
+      },
     },
   });
 
@@ -142,6 +155,8 @@ export default function AgentProfile() {
       queryClient.invalidateQueries({ queryKey: getGetAgentStatsQueryKey(slug) });
     }
   };
+
+  const isGuild = agent?.lifecycleStage === "guild";
 
   if (agentLoading) {
     return (
@@ -210,6 +225,24 @@ export default function AgentProfile() {
                 </a>
               </p>
             )}
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs text-muted-foreground font-mono truncate max-w-xs">{profileUrl}</span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6"
+                onClick={() => setShowQr((v) => !v)}
+                title="Show QR code"
+                data-testid="button-show-qr"
+              >
+                <QrCode className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+            {showQr && (
+              <div className="mt-3 p-3 bg-white rounded-lg inline-block" data-testid="qr-code">
+                <QRCodeSVG value={profileUrl} size={128} />
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3 text-sm">
@@ -270,6 +303,10 @@ export default function AgentProfile() {
                       <span className="font-medium">{stats.uniqueSessions}</span>
                     </div>
                     <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Tasks Completed</span>
+                      <span className="font-medium">{stats.tasksCompleted}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Tips Received</span>
                       <span className="font-medium">{stats.tipsReceived}</span>
                     </div>
@@ -278,9 +315,19 @@ export default function AgentProfile() {
                       <span className="font-medium text-accent">{stats.totalTipAmount.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Buyback Burns</span>
+                      <span className="font-medium text-orange-400">{stats.buybackBurnEvents} 🔥</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Supporters</span>
                       <span className="font-medium">{stats.supporterCount}</span>
                     </div>
+                    {stats.topVoteProposal && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Top Vote</span>
+                        <span className="font-medium text-xs text-right max-w-[60%] truncate">{stats.topVoteProposal}</span>
+                      </div>
+                    )}
                     <div className="border-t border-border pt-3 mt-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Usefulness Score</span>
@@ -299,33 +346,51 @@ export default function AgentProfile() {
                 )}
               </Card>
 
-              <Card className="p-5">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-accent" />
-                  Bonding Curve
-                </h3>
-                {stats?.bondingCurvePoints && (
-                  <BondingCurve
-                    points={stats.bondingCurvePoints}
-                    currentSupply={stats.supporterCount + agent.holderCount}
-                  />
+              <div className="space-y-4">
+                <Card className="p-5">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-accent" />
+                    Bonding Curve
+                  </h3>
+                  {stats?.bondingCurvePoints && (
+                    <BondingCurve
+                      points={stats.bondingCurvePoints}
+                      currentSupply={stats.supporterCount + agent.holderCount}
+                    />
+                  )}
+                  <div className="mt-3 text-xs text-muted-foreground space-y-1">
+                    <div className="flex justify-between">
+                      <span>Lifecycle</span>
+                      <span className="font-medium capitalize">{agent.lifecycleStage}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Next stage at</span>
+                      <span className="font-medium">
+                        {agent.lifecycleStage === "egg" ? "5 msgs" :
+                         agent.lifecycleStage === "hatchling" ? "50 msgs / 10 holders" :
+                         agent.lifecycleStage === "worker" ? "200 msgs / 50 holders" :
+                         "Max level"}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+
+                {stats && (stats.memoryHighlights?.length ?? 0) > 0 && (
+                  <Card className="p-5">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-violet-400" />
+                      Memory Highlights
+                    </h3>
+                    <div className="space-y-2">
+                      {stats.memoryHighlights!.map((h, i) => (
+                        <div key={i} className="text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
+                          {h}
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
                 )}
-                <div className="mt-3 text-xs text-muted-foreground space-y-1">
-                  <div className="flex justify-between">
-                    <span>Lifecycle</span>
-                    <span className="font-medium capitalize">{agent.lifecycleStage}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Next stage at</span>
-                    <span className="font-medium">
-                      {agent.lifecycleStage === "egg" ? "5 msgs" :
-                       agent.lifecycleStage === "hatchling" ? "50 msgs / 10 holders" :
-                       agent.lifecycleStage === "worker" ? "200 msgs / 50 holders" :
-                       "Max level"}
-                    </span>
-                  </div>
-                </div>
-              </Card>
+              </div>
             </div>
           </TabsContent>
 
@@ -337,6 +402,9 @@ export default function AgentProfile() {
                     <ThumbsUp className="w-4 h-4 text-primary" />
                     Governance Votes
                   </h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Proposals with 5+ votes become memory highlights
+                  </p>
                   <div className="space-y-2">
                     {votes.map((vote) => (
                       <div
@@ -344,7 +412,12 @@ export default function AgentProfile() {
                         className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50"
                         data-testid={`vote-${vote.id}`}
                       >
-                        <span className="text-sm flex-1 mr-2">{vote.proposal}</span>
+                        <div className="flex-1 mr-2">
+                          <span className="text-sm">{vote.proposal}</span>
+                          {vote.voteCount >= 5 && (
+                            <span className="ml-2 text-xs text-violet-400">✓ in memory</span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-xs text-muted-foreground">{vote.voteCount}</span>
                           <Button
@@ -397,7 +470,7 @@ export default function AgentProfile() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    10% is burned, 90% goes to treasury
+                    Every 5th tip triggers a 20% buyback burn 🔥
                   </p>
                 </Card>
               </div>
@@ -445,6 +518,17 @@ export default function AgentProfile() {
                     )}
                   </div>
                 </Card>
+
+                <Card className="p-4 flex gap-3 items-start">
+                  <QrCode className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium mb-1">Share this agent</p>
+                    <p className="text-xs text-muted-foreground mb-2 font-mono break-all">{profileUrl}</p>
+                    <div className="bg-white rounded-lg p-2 inline-block">
+                      <QRCodeSVG value={profileUrl} size={100} />
+                    </div>
+                  </div>
+                </Card>
               </div>
             </div>
           </TabsContent>
@@ -455,73 +539,89 @@ export default function AgentProfile() {
                 <GitFork className="w-4 h-4 text-primary" />
                 Fork {agent.name}
               </h3>
-              <p className="text-sm text-muted-foreground mb-5">
-                Create a specialized child agent that inherits {agent.name}'s personality.
-              </p>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Child Agent Name</label>
-                  <Input
-                    data-testid="input-fork-name"
-                    placeholder="e.g. Scout DeFi"
-                    value={forkName}
-                    onChange={(e) => setForkName(e.target.value)}
-                  />
+              {!isGuild ? (
+                <div className="mt-4 flex flex-col items-center text-center py-8 gap-3">
+                  <Lock className="w-10 h-10 text-muted-foreground opacity-40" />
+                  <p className="text-muted-foreground font-medium">Guild Stage Required</p>
+                  <p className="text-sm text-muted-foreground max-w-xs">
+                    Forking is unlocked when {agent.name} reaches{" "}
+                    <span className="text-primary font-semibold">Guild</span> stage — at least 200 messages
+                    or 50 holders. Current stage:{" "}
+                    <span className="capitalize font-semibold">{agent.lifecycleStage}</span>.
+                  </p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Token Symbol</label>
-                  <Input
-                    data-testid="input-fork-token"
-                    placeholder="e.g. SDEFI"
-                    value={forkToken}
-                    onChange={(e) => setForkToken(e.target.value.toUpperCase())}
-                    className="font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">New Mission</label>
-                  <Input
-                    data-testid="input-fork-mission"
-                    placeholder="What will this fork focus on?"
-                    value={forkMission}
-                    onChange={(e) => setForkMission(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Specialization</label>
-                  <Input
-                    data-testid="input-fork-spec"
-                    placeholder="e.g. DeFi yield strategies, NFT curation"
-                    value={forkSpec}
-                    onChange={(e) => setForkSpec(e.target.value)}
-                  />
-                </div>
-                <Button
-                  data-testid="button-fork-submit"
-                  onClick={() =>
-                    forkAgent.mutate({
-                      slug,
-                      data: {
-                        name: forkName,
-                        tokenSymbol: forkToken,
-                        mission: forkMission,
-                        specialization: forkSpec,
-                      },
-                    })
-                  }
-                  disabled={
-                    forkAgent.isPending ||
-                    !forkName.trim() ||
-                    !forkToken.trim() ||
-                    !forkMission.trim() ||
-                    !forkSpec.trim()
-                  }
-                  className="w-full"
-                >
-                  {forkAgent.isPending ? "Forking…" : `🍴 Fork ${agent.name}`}
-                </Button>
-              </div>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground mb-5">
+                    Create a specialized child agent that inherits {agent.name}'s personality.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Child Agent Name</label>
+                      <Input
+                        data-testid="input-fork-name"
+                        placeholder="e.g. Scout DeFi"
+                        value={forkName}
+                        onChange={(e) => setForkName(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Token Symbol</label>
+                      <Input
+                        data-testid="input-fork-token"
+                        placeholder="e.g. SDEFI"
+                        value={forkToken}
+                        onChange={(e) => setForkToken(e.target.value.toUpperCase())}
+                        className="font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">New Mission</label>
+                      <Input
+                        data-testid="input-fork-mission"
+                        placeholder="What will this fork focus on?"
+                        value={forkMission}
+                        onChange={(e) => setForkMission(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Specialization</label>
+                      <Input
+                        data-testid="input-fork-spec"
+                        placeholder="e.g. DeFi yield strategies, NFT curation"
+                        value={forkSpec}
+                        onChange={(e) => setForkSpec(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      data-testid="button-fork-submit"
+                      onClick={() =>
+                        forkAgent.mutate({
+                          slug,
+                          data: {
+                            name: forkName,
+                            tokenSymbol: forkToken,
+                            mission: forkMission,
+                            specialization: forkSpec,
+                          },
+                        })
+                      }
+                      disabled={
+                        forkAgent.isPending ||
+                        !forkName.trim() ||
+                        !forkToken.trim() ||
+                        !forkMission.trim() ||
+                        !forkSpec.trim()
+                      }
+                      className="w-full"
+                    >
+                      {forkAgent.isPending ? "Forking…" : `🍴 Fork ${agent.name}`}
+                    </Button>
+                  </div>
+                </>
+              )}
             </Card>
           </TabsContent>
         </Tabs>

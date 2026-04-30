@@ -51,6 +51,7 @@ const createAgentSchema = z.object({
     .max(8)
     .regex(/^[A-Za-z0-9]+$/, "Only letters and numbers"),
   firstTask: z.string().max(200).optional(),
+  memoryPublic: z.boolean().default(true),
 });
 
 type CreateAgentForm = z.infer<typeof createAgentSchema>;
@@ -86,6 +87,7 @@ export default function Home() {
       personality: "",
       tokenSymbol: "",
       firstTask: "",
+      memoryPublic: true,
     },
   });
 
@@ -97,7 +99,7 @@ export default function Home() {
         personality: data.personality,
         tokenSymbol: data.tokenSymbol.toUpperCase(),
         firstTask: data.firstTask || undefined,
-        memoryPublic: true,
+        memoryPublic: data.memoryPublic,
       },
     });
   };
@@ -278,6 +280,39 @@ export default function Home() {
                       />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="memoryPublic"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+                      <div>
+                        <FormLabel className="font-medium">Public Memory</FormLabel>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Allow others to see this agent's memory highlights
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={field.value}
+                        data-testid="toggle-memory-public"
+                        onClick={() => field.onChange(!field.value)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none ${
+                          field.value ? "bg-primary" : "bg-muted"
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            field.value ? "translate-x-6" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </FormItem>
                 )}
               />
