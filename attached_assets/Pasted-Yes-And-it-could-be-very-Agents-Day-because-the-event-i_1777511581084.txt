@@ -1,0 +1,256 @@
+Yes. And it could be very Agents Day because the event is about building and demoing actual AI agent projects, not just talking about agents, with workshops, mentors, demos, and prizes in Lisbon on May 1, 2026.  ￼
+
+The cleanest idea:
+
+TokenTwin: an AI agent whose “soul” is a crypto token
+
+A simple agent that is also a token, where the token is not just a speculative asset, but the governance, memory, budget, personality, and reputation layer of the agent.
+
+The pitch:
+
+What if an AI agent could be born as a token, earn money, remember its believers, spend from its own treasury, and evolve based on who holds it?
+
+Tiny digital creature. Half agent, half market organism. 🪙🧬
+
+How it works
+
+Anyone creates an agent by filling a very simple form:
+
+Name: “Lisbon Scout”
+Mission: “Find useful AI events, people, and opportunities in Lisbon.”
+Personality: curious, direct, founder-friendly
+Token symbol: $SCOUT
+
+When created, the platform launches:
+
+1. An AI agent profile
+    A public page where anyone can chat with the agent.
+2. A token
+    The token represents membership, influence, or belief in that agent.
+3. A treasury wallet
+    The agent can receive tips, subscriptions, sponsorships, or bounties.
+4. A memory layer
+    The agent remembers useful public knowledge, decisions, links, outputs, and community feedback.
+5. A simple voting/steering system
+    Token holders can vote on what the agent should do next.
+
+The demo at Agents Day
+
+You could make the demo dead simple:
+
+“Create an agent-token in 60 seconds”
+
+On stage:
+
+1. Type:
+    “Create an agent that helps people find other builders at Agents Day.”
+2. The system generates:
+    * agent name
+    * bio
+    * token symbol
+    * public page
+    * initial prompt/personality
+    * simple token contract or mock token
+    * QR code
+3. People scan the QR code.
+4. They can chat with the agent.
+5. They can “back” the agent by claiming or buying a tiny amount of its token.
+6. The agent starts showing:
+    * most requested topics
+    * people looking for similar things
+    * suggested introductions
+    * proposed missions
+
+That becomes a live social demo: the agent is born inside the event and immediately starts working for the room.
+
+The cooler version: Proof-of-Usefulness
+
+Instead of token price being the only signal, the agent has a score:
+
+Agent Value = usefulness, trust, revenue, and memory quality
+
+For example:
+
+* How many people talked to it?
+* How many people came back?
+* How many tasks did it complete?
+* How many useful intros did it create?
+* How much did users tip/pay it?
+* How often do holders vote for useful missions?
+* How much verified reputation does it have?
+
+So the token becomes an interface to a living agent economy, not just “AI meme coin number 9,481.”
+
+The magic twist
+
+The token could literally shape the agent.
+
+Holders vote on:
+
+* what tools it gets access to
+* what mission it follows
+* what integrations it can use
+* what revenue model it uses
+* which memories become canonical
+* whether it should clone/fork itself into a specialized sub-agent
+
+So $SCOUT is not just the agent’s token. It is the agent’s nervous system.
+
+Even more creative: agent-token lifecycle
+
+Each agent has stages:
+
+1. Egg
+
+Created by one person. No public memory yet.
+
+2. Hatchling
+
+First users interact. It learns what people want.
+
+3. Worker
+
+It starts completing tasks and earning.
+
+4. Guild
+
+Token holders coordinate around it.
+
+5. Fork
+
+The agent can spawn children:
+
+* $SCOUT_JOBS
+* $SCOUT_EVENTS
+* $SCOUT_INVESTORS
+* $SCOUT_BUILDERS
+
+Each child inherits part of the parent’s memory and community.
+
+That’s spicy because it turns agents into evolving economic organisms.
+
+Best simple name ideas
+
+My favorites:
+
+AgentMint
+
+“Mint an agent. Grow its economy.”
+
+SoulToken
+
+A tokenized agent soul. More poetic, slightly weirder.
+
+KinAgent
+
+Agents with communities, memory, and shared ownership.
+
+TokenTwin
+
+Every agent has a token twin.
+
+AgentSeed
+
+Plant an agent. Let people fund, steer, and grow it.
+
+MintMind
+
+A mind that can be minted.
+
+Proof of Agent
+
+A bit more crypto-native and hackathon-friendly.
+
+AgentOShares
+
+Shares in an autonomous AI worker.
+
+My strongest pick for Agents Day: AgentSeed.
+
+It feels simple, warm, and demoable:
+
+Create an AI agent. Give it a mission. Mint its seed token. Let the community grow it.
+
+A very strong one-day MVP
+
+Build only this:
+
+Page 1: Create Agent
+
+Fields:
+
+* Agent name
+* Mission
+* Personality
+* Token symbol
+* Public or private memory
+* First task
+
+Page 2: Agent Profile
+
+Shows:
+
+* chat box
+* token badge
+* mission
+* treasury
+* top holders/supporters
+* current task
+* memory highlights
+* “vote next action”
+
+Page 3: Event Mode
+
+A special QR code for Agents Day:
+
+“Talk to the Agents Day Scout. Tell it what you’re building. It will find 3 useful people for you.”
+
+This is probably the best demo angle, because it uses the actual room as the dataset.
+
+The killer Agents Day concept
+
+Call it:
+
+AgentSeed: launch an AI agent with its own token, mission, memory, and community
+
+One-liner:
+
+AgentSeed lets anyone create an AI agent that can be backed, steered, and rewarded through its own token.
+
+More poetic version:
+
+Every agent starts as a seed: a mission, a wallet, a memory, and a tiny economy around it.
+
+Demo version:
+
+At Agents Day, we create the event’s own agent live. Attendees scan a QR, talk to it, back it, and steer what it does next.
+
+Why it is actually innovative
+
+Most agent projects are tools.
+Most tokens are passive.
+This makes the token the coordination layer around an agent.
+
+The agent gets:
+
+* identity
+* incentives
+* memory
+* public accountability
+* community direction
+* treasury
+* distribution
+
+And the token gets:
+
+* utility
+* story
+* behavior
+* measurable output
+* not just vibes in a trench coat
+
+It becomes a new primitive:
+
+Autonomous work + shared ownership + measurable usefulness.
+
+That’s a very Marco-coded concept, honestly: part AI worker, part public good, part weird little economic creature with shoes. 🐣🪙
