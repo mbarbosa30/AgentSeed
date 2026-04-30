@@ -101,12 +101,24 @@ export interface SendTipBody {
   fromHandle?: string | null;
 }
 
+export type TreasuryInfoLifecycleStage =
+  (typeof TreasuryInfoLifecycleStage)[keyof typeof TreasuryInfoLifecycleStage];
+
+export const TreasuryInfoLifecycleStage = {
+  egg: "egg",
+  hatchling: "hatchling",
+  worker: "worker",
+  guild: "guild",
+} as const;
+
 export interface TreasuryInfo {
   treasuryBalance: number;
   holderCount: number;
   totalTips: number;
   burnEvents: number;
   isBuybackTip: boolean;
+  lifecycleStage: TreasuryInfoLifecycleStage;
+  lifecycleAdvanced: boolean;
 }
 
 export interface AddSupporterBody {

@@ -557,12 +557,19 @@ components:
           type: integer
         isBuybackTip:
           type: boolean
+        lifecycleStage:
+          type: string
+          enum: [egg, hatchling, worker, guild]
+        lifecycleAdvanced:
+          type: boolean
       required:
         - treasuryBalance
         - holderCount
         - totalTips
         - burnEvents
         - isBuybackTip
+        - lifecycleStage
+        - lifecycleAdvanced
 
     AddSupporterBody:
       type: object

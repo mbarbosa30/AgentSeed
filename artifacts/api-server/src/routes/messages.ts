@@ -8,6 +8,7 @@ import {
   SendAgentMessageBody,
 } from "@workspace/api-zod";
 import { ai } from "@workspace/integrations-gemini-ai";
+import { progressLifecycle } from "../lib/lifecycle";
 
 const router: IRouter = Router();
 
@@ -150,21 +151,30 @@ router.post("/agents/:slug/messages", async (req, res) => {
     const allTips = await db.$count(tipsTable, eq(tipsTable.agentId, agent.id));
     const newMood = pickMood(totalMessages, agent.holderCount, allTips);
 
-    let newLifecycle: "egg" | "hatchling" | "worker" | "guild" = "egg";
-    const h = agent.holderCount;
-    if (h >= 50 || totalMessages >= 200) newLifecycle = "guild";
-    else if (h >= 10 || totalMessages >= 50) newLifecycle = "worker";
-    else if (totalMessages >= 5) newLifecycle = "hatchling";
+    const progression = progressLifecycle(agent.lifecycleStage, {
+      messageCount: totalMessages,
+      holderCount: agent.holderCount,
+      tipCount: allTips,
+    });
 
-    const memHighlight = `Task progress: responded to "${body.content.slice(0, 60)}${body.content.length > 60 ? "…" : ""}"`;
     const existingHighlights = agent.memoryHighlights ?? [];
-    const updatedHighlights = totalMessages % 10 === 0
-      ? [...existingHighlights, memHighlight].slice(-10)
-      : existingHighlights;
+    let updatedHighlights = existingHighlights;
+
+    if (progression.advanced && progression.highlight) {
+      updatedHighlights = [...updatedHighlights, progression.highlight].slice(-10);
+    } else if (totalMessages % 10 === 0) {
+      const memHighlight = `Task progress: responded to "${body.content.slice(0, 60)}${body.content.length > 60 ? "…" : ""}"`;
+      updatedHighlights = [...updatedHighlights, memHighlight].slice(-10);
+    }
 
     await db
       .update(agentsTable)
-      .set({ mood: newMood, lifecycleStage: newLifecycle, memoryHighlights: updatedHighlights })
+      .set({
+        mood: newMood,
+        lifecycleStage: progression.stage,
+        treasuryBalance: agent.treasuryBalance + progression.treasuryReward,
+        memoryHighlights: updatedHighlights,
+      })
       .where(eq(agentsTable.id, agent.id));
   }
 

@@ -168,6 +168,8 @@ export const SendTipResponse = zod.object({
   totalTips: zod.number(),
   burnEvents: zod.number(),
   isBuybackTip: zod.boolean(),
+  lifecycleStage: zod.enum(["egg", "hatchling", "worker", "guild"]),
+  lifecycleAdvanced: zod.boolean(),
 });
 
 /**

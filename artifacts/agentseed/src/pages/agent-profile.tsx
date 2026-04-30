@@ -120,10 +120,14 @@ export default function AgentProfile() {
       onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: getGetAgentQueryKey(slug) });
         queryClient.invalidateQueries({ queryKey: getGetAgentStatsQueryKey(slug) });
-        const extra = data.isBuybackTip ? " 🔥 Buyback burn triggered!" : "";
+        const extras: string[] = [];
+        if (data.isBuybackTip) extras.push("🔥 Buyback burn triggered");
+        if (data.lifecycleAdvanced) extras.push(`🌱 Evolved to ${data.lifecycleStage}`);
         toast({
-          title: `Tip sent! Treasury: ${data.treasuryBalance.toFixed(2)}${extra}`,
-          description: `${data.burnEvents} buyback burns so far`,
+          title: `Tip sent! Treasury: ${data.treasuryBalance.toFixed(2)}`,
+          description: extras.length > 0
+            ? extras.join(" · ")
+            : `${data.burnEvents} buyback burns so far`,
         });
       },
     },
@@ -132,6 +136,7 @@ export default function AgentProfile() {
   const addSupporter = useAddSupporter({
     mutation: {
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetAgentQueryKey(slug) });
         queryClient.invalidateQueries({ queryKey: getGetAgentSupportersQueryKey(slug) });
         queryClient.invalidateQueries({ queryKey: getGetAgentStatsQueryKey(slug) });
         setSupporterNick("");
@@ -169,6 +174,9 @@ export default function AgentProfile() {
     setLocalMessages((prev) => [...prev, msg]);
     if (msg.role === "assistant") {
       queryClient.invalidateQueries({ queryKey: getGetAgentStatsQueryKey(slug) });
+      // Lifecycle stage / treasury / mood may have advanced server-side after this reply;
+      // refetch the agent so the header badge and stats reflect the new stage immediately.
+      queryClient.invalidateQueries({ queryKey: getGetAgentQueryKey(slug) });
     }
   };
 
@@ -383,17 +391,25 @@ export default function AgentProfile() {
                   <div className="mt-3 text-xs text-muted-foreground space-y-1">
                     <div className="flex justify-between">
                       <span>Lifecycle</span>
-                      <span className="font-medium capitalize">{agent.lifecycleStage}</span>
+                      <span className="font-medium capitalize" data-testid="text-lifecycle-stage">{agent.lifecycleStage}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Next stage at</span>
-                      <span className="font-medium">
-                        {agent.lifecycleStage === "egg" ? "5 msgs" :
-                         agent.lifecycleStage === "hatchling" ? "50 msgs / 10 holders" :
-                         agent.lifecycleStage === "worker" ? "200 msgs / 50 holders" :
+                      <span className="font-medium" data-testid="text-next-stage">
+                        {agent.lifecycleStage === "egg" ? "10 growth" :
+                         agent.lifecycleStage === "hatchling" ? "50 growth" :
+                         agent.lifecycleStage === "worker" ? "200 growth" :
                          "Max level"}
                       </span>
                     </div>
+                    {agent.lifecycleStage !== "guild" && stats && (
+                      <div className="flex justify-between text-[10px] opacity-70">
+                        <span>Growth = msgs + 10·holders + 5·tips</span>
+                        <span className="font-mono">
+                          {stats.totalMessages + agent.holderCount * 10 + stats.tipsReceived * 5}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </Card>
 

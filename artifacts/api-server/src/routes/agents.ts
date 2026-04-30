@@ -7,7 +7,6 @@ import {
   ForkAgentParams,
   ForkAgentBody,
 } from "@workspace/api-zod";
-
 const router: IRouter = Router();
 
 function slugify(name: string): string {
@@ -16,16 +15,6 @@ function slugify(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
-}
-
-function computeLifecycle(
-  messageCount: number,
-  holderCount: number,
-): "egg" | "hatchling" | "worker" | "guild" {
-  if (holderCount >= 50 || messageCount >= 200) return "guild";
-  if (holderCount >= 10 || messageCount >= 50) return "worker";
-  if (messageCount >= 5) return "hatchling";
-  return "egg";
 }
 
 router.get("/agents", async (_req, res) => {
@@ -169,5 +158,4 @@ router.post("/agents/:slug/fork", async (req, res) => {
   res.status(201).json(child);
 });
 
-export { computeLifecycle };
 export default router;

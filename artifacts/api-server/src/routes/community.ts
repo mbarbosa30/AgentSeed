@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc, sql, sum, count } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { db, agentsTable, votesTable, tipsTable, supportersTable, messagesTable } from "@workspace/db";
 import {
   GetAgentVotesParams,
@@ -12,6 +12,8 @@ import {
   GetAgentSupportersParams,
   GetAgentStatsParams,
 } from "@workspace/api-zod";
+import { progressLifecycle } from "../lib/lifecycle";
+
 const router: IRouter = Router();
 
 function bondingCurvePoints(supply: number): Array<{ t: number; price: number; supply: number }> {
@@ -24,13 +26,6 @@ function bondingCurvePoints(supply: number): Array<{ t: number; price: number; s
     points.push({ t, price: Math.round(price * 10000) / 10000, supply: s });
   }
   return points;
-}
-
-function computeLifecycle(holderCount: number, messageCount: number): "egg" | "hatchling" | "worker" | "guild" {
-  if (holderCount >= 50 || messageCount >= 200) return "guild";
-  if (holderCount >= 10 || messageCount >= 50) return "worker";
-  if (messageCount >= 5) return "hatchling";
-  return "egg";
 }
 
 function pickMood(holderCount: number, tipCount: number): "focused" | "curious" | "confident" | "generous" | "survival" {
@@ -175,12 +170,30 @@ router.post("/agents/:slug/tip", async (req, res) => {
     addedToTreasury = body.amount;
   }
 
-  const newBalance = agent.treasuryBalance + addedToTreasury;
+  const totalMessages = await db.$count(messagesTable, eq(messagesTable.agentId, agent.id));
+  const progression = progressLifecycle(agent.lifecycleStage, {
+    messageCount: totalMessages,
+    holderCount: agent.holderCount,
+    tipCount: totalTipCount,
+  });
+
+  const newBalance = agent.treasuryBalance + addedToTreasury + progression.treasuryReward;
   const burnEvents = Math.floor(totalTipCount / 5);
+  const newMood = pickMood(agent.holderCount, totalTipCount);
+
+  const existingHighlights = agent.memoryHighlights ?? [];
+  const updatedHighlights = progression.advanced && progression.highlight
+    ? [...existingHighlights, progression.highlight].slice(-10)
+    : existingHighlights;
 
   await db
     .update(agentsTable)
-    .set({ treasuryBalance: newBalance })
+    .set({
+      treasuryBalance: newBalance,
+      lifecycleStage: progression.stage,
+      mood: newMood,
+      memoryHighlights: updatedHighlights,
+    })
     .where(eq(agentsTable.id, agent.id));
 
   res.json({
@@ -189,6 +202,8 @@ router.post("/agents/:slug/tip", async (req, res) => {
     totalTips: totalTipAmount,
     burnEvents,
     isBuybackTip,
+    lifecycleStage: progression.stage,
+    lifecycleAdvanced: progression.advanced,
   });
 });
 
@@ -219,19 +234,27 @@ router.post("/agents/:slug/support", async (req, res) => {
   const newHolderCount = agent.holderCount + 1;
   const totalMessages = await db.$count(messagesTable, eq(messagesTable.agentId, agent.id));
   const totalTips = await db.$count(tipsTable, eq(tipsTable.agentId, agent.id));
-  const newLifecycle = computeLifecycle(newHolderCount, totalMessages);
+  const progression = progressLifecycle(agent.lifecycleStage, {
+    messageCount: totalMessages,
+    holderCount: newHolderCount,
+    tipCount: totalTips,
+  });
   const newMood = pickMood(newHolderCount, totalTips);
 
   const newHighlight = `New supporter: @${body.nickname}`;
   const existing = agent.memoryHighlights ?? [];
-  const updated = [...existing, newHighlight].slice(-10);
+  let updated = [...existing, newHighlight].slice(-10);
+  if (progression.advanced && progression.highlight) {
+    updated = [...updated, progression.highlight].slice(-10);
+  }
 
   await db
     .update(agentsTable)
     .set({
       holderCount: newHolderCount,
-      lifecycleStage: newLifecycle,
+      lifecycleStage: progression.stage,
       mood: newMood,
+      treasuryBalance: agent.treasuryBalance + progression.treasuryReward,
       memoryHighlights: updated,
     })
     .where(eq(agentsTable.id, agent.id));
