@@ -238,17 +238,12 @@ router.post("/agents/:slug/support", async (req, res) => {
     return;
   }
 
-  const requestedTokens = body.tokens ?? 100;
-  const tokens = Number.isFinite(requestedTokens)
-    ? Math.max(0, Math.min(requestedTokens, 1_000_000))
-    : 100;
-
   const [supporter] = await db
     .insert(supportersTable)
     .values({
       agentId: agent.id,
       nickname: body.nickname,
-      tokens,
+      tokens: body.tokens ?? 100,
     })
     .returning();
 
