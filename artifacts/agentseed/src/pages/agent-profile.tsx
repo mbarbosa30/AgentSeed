@@ -25,6 +25,7 @@ import {
   useSendTip,
   useAddSupporter,
   useForkAgent,
+  useCreateProposal,
   getGetAgentQueryKey,
   getGetAgentMessagesQueryKey,
   getGetAgentStatsQueryKey,
@@ -60,6 +61,7 @@ export default function AgentProfile() {
   const [forkMission, setForkMission] = useState("");
   const [forkSpec, setForkSpec] = useState("");
   const [showQr, setShowQr] = useState(false);
+  const [newProposal, setNewProposal] = useState("");
 
   const profileUrl = typeof window !== "undefined"
     ? `${window.location.origin}/agent/${slug}`
@@ -145,6 +147,19 @@ export default function AgentProfile() {
       },
       onError: () => {
         toast({ title: "Fork failed", description: "Only Guild-stage agents can be forked", variant: "destructive" });
+      },
+    },
+  });
+
+  const createProposal = useCreateProposal({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetAgentVotesQueryKey(slug) });
+        setNewProposal("");
+        toast({ title: "Proposal submitted!" });
+      },
+      onError: () => {
+        toast({ title: "Failed to submit proposal", variant: "destructive" });
       },
     },
   });
@@ -403,8 +418,25 @@ export default function AgentProfile() {
                     Governance Votes
                   </h3>
                   <p className="text-xs text-muted-foreground mb-3">
-                    Proposals with 5+ votes become memory highlights
+                    Proposals with 5+ votes become memory highlights that shape the agent's behavior
                   </p>
+                  <div className="flex gap-2 mb-3">
+                    <Input
+                      data-testid="input-new-proposal"
+                      placeholder="Propose a new mission or tool unlock…"
+                      value={newProposal}
+                      onChange={(e) => setNewProposal(e.target.value)}
+                      className="text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      data-testid="button-submit-proposal"
+                      disabled={createProposal.isPending || newProposal.trim().length < 5}
+                      onClick={() => createProposal.mutate({ slug, data: { proposal: newProposal.trim() } })}
+                    >
+                      Propose
+                    </Button>
+                  </div>
                   <div className="space-y-2">
                     {votes.map((vote) => (
                       <div

@@ -140,6 +140,17 @@ export const SubmitVoteResponse = zod.object({
 });
 
 /**
+ * @summary Create a new governance proposal
+ */
+export const CreateProposalParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const CreateProposalBody = zod.object({
+  proposal: zod.string(),
+});
+
+/**
  * @summary Send a tip to the agent treasury (mock)
  */
 export const SendTipParams = zod.object({

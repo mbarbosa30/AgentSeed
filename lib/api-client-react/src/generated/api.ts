@@ -23,6 +23,7 @@ import type {
   AgentStats,
   ApiError,
   CreateAgentBody,
+  CreateProposalBody,
   ForkAgentBody,
   GetAgentMessagesParams,
   HealthStatus,
@@ -732,6 +733,93 @@ export const useSubmitVote = <
   TContext
 > => {
   return useMutation(getSubmitVoteMutationOptions(options));
+};
+
+/**
+ * @summary Create a new governance proposal
+ */
+export const getCreateProposalUrl = (slug: string) => {
+  return `/api/agents/${slug}/proposals`;
+};
+
+export const createProposal = async (
+  slug: string,
+  createProposalBody: CreateProposalBody,
+  options?: RequestInit,
+): Promise<VoteProposal> => {
+  return customFetch<VoteProposal>(getCreateProposalUrl(slug), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createProposalBody),
+  });
+};
+
+export const getCreateProposalMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProposal>>,
+    TError,
+    { slug: string; data: BodyType<CreateProposalBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createProposal>>,
+  TError,
+  { slug: string; data: BodyType<CreateProposalBody> },
+  TContext
+> => {
+  const mutationKey = ["createProposal"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createProposal>>,
+    { slug: string; data: BodyType<CreateProposalBody> }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return createProposal(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateProposalMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createProposal>>
+>;
+export type CreateProposalMutationBody = BodyType<CreateProposalBody>;
+export type CreateProposalMutationError = ErrorType<ApiError>;
+
+/**
+ * @summary Create a new governance proposal
+ */
+export const useCreateProposal = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProposal>>,
+    TError,
+    { slug: string; data: BodyType<CreateProposalBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createProposal>>,
+  TError,
+  { slug: string; data: BodyType<CreateProposalBody> },
+  TContext
+> => {
+  return useMutation(getCreateProposalMutationOptions(options));
 };
 
 /**

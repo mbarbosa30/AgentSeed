@@ -91,6 +91,10 @@ export interface SubmitVoteBody {
   proposalId: number;
 }
 
+export interface CreateProposalBody {
+  proposal: string;
+}
+
 export interface SendTipBody {
   amount: number;
   /** @nullable */
