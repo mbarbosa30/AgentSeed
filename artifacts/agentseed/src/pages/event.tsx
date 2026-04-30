@@ -54,7 +54,7 @@ export default function EventMode() {
     query: {
       queryKey: getGetAgentStatsQueryKey(SCOUT_SLUG),
       enabled: !!agent,
-      refetchInterval: 15_000,
+      refetchInterval: 10_000,
     },
   });
 
@@ -312,13 +312,24 @@ export default function EventMode() {
 
           {stats?.bondingCurvePoints && (
             <div className="px-4 py-4 border-t border-border">
-              <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                <span>Bonding curve</span>
-                <span className="font-mono text-muted-foreground/60">${agent?.tokenSymbol}</span>
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <span>Bonding curve</span>
+                  <span className="font-mono text-muted-foreground/60">${agent?.tokenSymbol}</span>
+                </h3>
+                <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                  Live
+                </span>
+              </div>
               <BondingCurve
                 points={stats.bondingCurvePoints}
-                currentSupply={stats.supporterCount}
+                currentSupply={stats.currentSupply}
+                currentPrice={stats.currentPrice}
+                treasuryBalance={stats.treasuryBalance}
+                holderCount={stats.holderCount}
+                tokenSymbol={agent?.tokenSymbol}
+                isLive
               />
             </div>
           )}

@@ -378,24 +378,38 @@ export default function AgentProfile() {
 
               <div className="space-y-4">
                 <Card className="p-5">
-                  <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-accent" />
-                    Bonding Curve
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                      Bonding curve
+                    </h3>
+                    <span
+                      className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground"
+                      data-testid="bonding-live-indicator"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Live
+                    </span>
+                  </div>
                   {stats?.bondingCurvePoints && (
                     <BondingCurve
                       points={stats.bondingCurvePoints}
-                      currentSupply={stats.supporterCount + agent.holderCount}
+                      currentSupply={stats.currentSupply}
+                      currentPrice={stats.currentPrice}
+                      treasuryBalance={stats.treasuryBalance}
+                      holderCount={stats.holderCount}
+                      tokenSymbol={agent.tokenSymbol}
+                      isLive
                     />
                   )}
-                  <div className="mt-3 text-xs text-muted-foreground space-y-1">
+                  <div className="mt-4 pt-4 border-t border-border text-xs text-muted-foreground space-y-1.5">
                     <div className="flex justify-between">
                       <span>Lifecycle</span>
-                      <span className="font-medium capitalize" data-testid="text-lifecycle-stage">{agent.lifecycleStage}</span>
+                      <span className="font-medium capitalize text-foreground" data-testid="text-lifecycle-stage">{agent.lifecycleStage}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Next stage at</span>
-                      <span className="font-medium" data-testid="text-next-stage">
+                      <span className="font-medium text-foreground" data-testid="text-next-stage">
                         {agent.lifecycleStage === "egg" ? "10 growth" :
                          agent.lifecycleStage === "hatchling" ? "50 growth" :
                          agent.lifecycleStage === "worker" ? "200 growth" :
@@ -406,7 +420,7 @@ export default function AgentProfile() {
                       <div className="flex justify-between text-[10px] opacity-70">
                         <span>Growth = msgs + 10·holders + 5·tips</span>
                         <span className="font-mono">
-                          {stats.totalMessages + agent.holderCount * 10 + stats.tipsReceived * 5}
+                          {stats.totalMessages + (stats.holderCount ?? agent.holderCount) * 10 + stats.tipsReceived * 5}
                         </span>
                       </div>
                     )}

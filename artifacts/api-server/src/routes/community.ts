@@ -16,14 +16,30 @@ import { progressLifecycle } from "../lib/lifecycle";
 
 const router: IRouter = Router();
 
-function bondingCurvePoints(supply: number): Array<{ t: number; price: number; supply: number }> {
+const PRICE_K = 0.0001;
+const PRICE_EXP = 1.5;
+const MAX_SUPPLY = 10_000_000;
+
+function safeSupply(supply: number): number {
+  if (!Number.isFinite(supply) || supply < 0) return 0;
+  return Math.min(supply, MAX_SUPPLY);
+}
+
+function bondingCurvePrice(supply: number): number {
+  const s = safeSupply(supply);
+  return PRICE_K * Math.pow(s + 1, PRICE_EXP);
+}
+
+function bondingCurvePoints(currentSupply: number): Array<{ t: number; price: number; supply: number }> {
+  const safe = safeSupply(currentSupply);
+  const projectedMax = Math.max(safe * 2, 1000);
   const points = [];
-  const steps = 12;
+  const steps = 24;
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
-    const s = Math.round(supply * t);
-    const price = 0.0001 * Math.pow(s + 1, 1.5);
-    points.push({ t, price: Math.round(price * 10000) / 10000, supply: s });
+    const s = Math.round(projectedMax * t);
+    const price = bondingCurvePrice(s);
+    points.push({ t, price: Math.round(price * 100000) / 100000, supply: s });
   }
   return points;
 }
@@ -222,12 +238,17 @@ router.post("/agents/:slug/support", async (req, res) => {
     return;
   }
 
+  const requestedTokens = body.tokens ?? 100;
+  const tokens = Number.isFinite(requestedTokens)
+    ? Math.max(0, Math.min(requestedTokens, 1_000_000))
+    : 100;
+
   const [supporter] = await db
     .insert(supportersTable)
     .values({
       agentId: agent.id,
       nickname: body.nickname,
-      tokens: body.tokens ?? 100,
+      tokens,
     })
     .returning();
 
@@ -320,10 +341,14 @@ router.get("/agents/:slug/stats", async (req, res) => {
   const activeVotes = allVotes.length;
   const totalVotesCast = allVotes.reduce((acc, v) => acc + v.voteCount, 0);
 
-  const supporterCount = await db.$count(
-    supportersTable,
-    eq(supportersTable.agentId, agent.id),
-  );
+  const allSupporters = await db
+    .select({ tokens: supportersTable.tokens })
+    .from(supportersTable)
+    .where(eq(supportersTable.agentId, agent.id));
+
+  const supporterCount = allSupporters.length;
+  const currentSupply = allSupporters.reduce((acc, s) => acc + s.tokens, 0);
+  const currentPrice = bondingCurvePrice(currentSupply);
 
   const topVote = allVotes.sort((a, b) => b.voteCount - a.voteCount)[0];
 
@@ -342,8 +367,6 @@ router.get("/agents/:slug/stats", async (req, res) => {
     ),
   );
 
-  const supply = supporterCount + agent.holderCount;
-
   res.json({
     totalMessages,
     tasksCompleted,
@@ -359,7 +382,11 @@ router.get("/agents/:slug/stats", async (req, res) => {
     usefulnessScore,
     lifecycleStage: agent.lifecycleStage,
     mood: agent.mood,
-    bondingCurvePoints: bondingCurvePoints(supply),
+    treasuryBalance: agent.treasuryBalance,
+    holderCount: agent.holderCount,
+    currentSupply: Math.round(currentSupply * 100) / 100,
+    currentPrice: Math.round(currentPrice * 100000) / 100000,
+    bondingCurvePoints: bondingCurvePoints(currentSupply),
   });
 });
 

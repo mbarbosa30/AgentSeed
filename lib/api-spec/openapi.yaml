@@ -576,8 +576,12 @@ components:
       properties:
         nickname:
           type: string
+          minLength: 1
+          maxLength: 64
         tokens:
           type: number
+          minimum: 0
+          maximum: 1000000
       required:
         - nickname
 
@@ -636,6 +640,18 @@ components:
           type: array
           items:
             type: string
+        treasuryBalance:
+          type: number
+          description: Live treasury balance, polled from server
+        holderCount:
+          type: integer
+          description: Live count of distinct token holders
+        currentSupply:
+          type: number
+          description: Total tokens minted so far (sum of supporter tokens)
+        currentPrice:
+          type: number
+          description: Current token price on the bonding curve
         bondingCurvePoints:
           type: array
           items:
@@ -654,6 +670,10 @@ components:
         - lifecycleStage
         - mood
         - memoryHighlights
+        - treasuryBalance
+        - holderCount
+        - currentSupply
+        - currentPrice
         - bondingCurvePoints
 
     BondingCurvePoint:

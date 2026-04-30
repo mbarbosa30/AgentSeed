@@ -122,7 +122,15 @@ export interface TreasuryInfo {
 }
 
 export interface AddSupporterBody {
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
   nickname: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
   tokens?: number;
 }
 
@@ -155,6 +163,14 @@ export interface AgentStats {
   lifecycleStage: string;
   mood: string;
   memoryHighlights: string[];
+  /** Live treasury balance, polled from server */
+  treasuryBalance: number;
+  /** Live count of distinct token holders */
+  holderCount: number;
+  /** Total tokens minted so far (sum of supporter tokens) */
+  currentSupply: number;
+  /** Current token price on the bonding curve */
+  currentPrice: number;
   bondingCurvePoints: BondingCurvePoint[];
 }
 

@@ -179,9 +179,18 @@ export const AddSupporterParams = zod.object({
   slug: zod.coerce.string(),
 });
 
+export const addSupporterBodyNicknameMax = 64;
+
+export const addSupporterBodyTokensMin = 0;
+export const addSupporterBodyTokensMax = 1000000;
+
 export const AddSupporterBody = zod.object({
-  nickname: zod.string(),
-  tokens: zod.number().optional(),
+  nickname: zod.string().min(1).max(addSupporterBodyNicknameMax),
+  tokens: zod
+    .number()
+    .min(addSupporterBodyTokensMin)
+    .max(addSupporterBodyTokensMax)
+    .optional(),
 });
 
 /**
@@ -224,6 +233,16 @@ export const GetAgentStatsResponse = zod.object({
   lifecycleStage: zod.string(),
   mood: zod.string(),
   memoryHighlights: zod.array(zod.string()),
+  treasuryBalance: zod
+    .number()
+    .describe("Live treasury balance, polled from server"),
+  holderCount: zod.number().describe("Live count of distinct token holders"),
+  currentSupply: zod
+    .number()
+    .describe("Total tokens minted so far (sum of supporter tokens)"),
+  currentPrice: zod
+    .number()
+    .describe("Current token price on the bonding curve"),
   bondingCurvePoints: zod.array(
     zod.object({
       t: zod.number(),
