@@ -299,6 +299,7 @@ export default function Home() {
                         type="button"
                         role="switch"
                         aria-checked={field.value}
+                        aria-label="Public memory"
                         data-testid="toggle-memory-public"
                         onClick={() => field.onChange(!field.value)}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none ${

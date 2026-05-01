@@ -212,7 +212,7 @@ export default function AgentProfile() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <Button
           variant="ghost"
           size="sm"
@@ -301,15 +301,17 @@ export default function AgentProfile() {
         </div>
 
         <Tabs defaultValue="chat" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="chat" data-testid="tab-chat">Chat</TabsTrigger>
-            <TabsTrigger value="stats" data-testid="tab-stats">Stats</TabsTrigger>
-            <TabsTrigger value="community" data-testid="tab-community">Community</TabsTrigger>
-            <TabsTrigger value="fork" data-testid="tab-fork">Fork</TabsTrigger>
-          </TabsList>
+          <div className="-mx-4 sm:-mx-6 px-4 sm:px-6 overflow-x-auto mb-4">
+            <TabsList className="w-max">
+              <TabsTrigger value="chat" data-testid="tab-chat">Chat</TabsTrigger>
+              <TabsTrigger value="stats" data-testid="tab-stats">Stats</TabsTrigger>
+              <TabsTrigger value="community" data-testid="tab-community">Community</TabsTrigger>
+              <TabsTrigger value="fork" data-testid="tab-fork">Fork</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="chat">
-            <Card className="h-[520px] flex flex-col overflow-hidden">
+            <Card className="h-[70vh] min-h-[420px] max-h-[640px] flex flex-col overflow-hidden">
               <ChatInterface
                 slug={slug}
                 messages={localMessages}

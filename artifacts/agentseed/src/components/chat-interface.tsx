@@ -41,6 +41,7 @@ export function ChatInterface({ slug, messages, onNewMessage, apiBase }: ChatInt
     };
     onNewMessage(userMsg);
 
+    let assistantAppended = false;
     try {
       const base = apiBase.endsWith("/") ? apiBase.slice(0, -1) : apiBase;
       const res = await fetch(`${base}/api/agents/${slug}/messages`, {
@@ -54,41 +55,70 @@ export function ChatInterface({ slug, messages, onNewMessage, apiBase }: ChatInt
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullText = "";
+      let streamErrored = false;
+      let buffer = "";
 
-      while (true) {
+      const handleLine = (line: string): boolean => {
+        if (!line.startsWith("data: ")) return true;
+        let evt: { type?: string; text?: string; message?: string } | null = null;
+        try {
+          evt = JSON.parse(line.slice(6));
+        } catch {
+          return true;
+        }
+        if (!evt) return true;
+        if (evt.type === "chunk") {
+          fullText += evt.text ?? "";
+          setStreamText(fullText);
+        } else if (evt.type === "done") {
+          if (!assistantAppended) {
+            assistantAppended = true;
+            const assistantMsg: AgentMessage = {
+              id: Date.now() + 1,
+              agentId: 0,
+              role: "assistant",
+              content: fullText,
+              createdAt: new Date().toISOString(),
+            };
+            onNewMessage(assistantMsg);
+            setStreamText("");
+          }
+        } else if (evt.type === "error") {
+          streamErrored = true;
+          return false;
+        }
+        return true;
+      };
+
+      outer: while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const evt = JSON.parse(line.slice(6));
-            if (evt.type === "chunk") {
-              fullText += evt.text;
-              setStreamText(fullText);
-            } else if (evt.type === "done") {
-              const assistantMsg: AgentMessage = {
-                id: Date.now() + 1,
-                agentId: 0,
-                role: "assistant",
-                content: fullText,
-                createdAt: new Date().toISOString(),
-              };
-              onNewMessage(assistantMsg);
-              setStreamText("");
-            }
-          } catch {}
+        if (done) {
+          buffer += decoder.decode();
+          const tail = buffer.split("\n");
+          for (const line of tail) {
+            if (!handleLine(line)) break outer;
+          }
+          break;
+        }
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n");
+        buffer = parts.pop() ?? "";
+        for (const line of parts) {
+          if (!handleLine(line)) break outer;
         }
       }
+
+      if (streamErrored) throw new Error("Stream error");
     } catch (e) {
-      onNewMessage({
-        id: Date.now() + 1,
-        agentId: 0,
-        role: "assistant",
-        content: "Sorry, I ran into an issue. Try again?",
-        createdAt: new Date().toISOString(),
-      });
+      if (!assistantAppended) {
+        onNewMessage({
+          id: Date.now() + 1,
+          agentId: 0,
+          role: "assistant",
+          content: "Sorry, I ran into an issue. Try again?",
+          createdAt: new Date().toISOString(),
+        });
+      }
       setStreamText("");
     } finally {
       setStreaming(false);

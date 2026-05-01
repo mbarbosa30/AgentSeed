@@ -82,6 +82,7 @@ export default function EventMode() {
     };
     setMessages((prev) => [...prev, userMsg]);
 
+    let assistantAppended = false;
     try {
       const base = apiBase.endsWith("/") ? apiBase.slice(0, -1) : apiBase;
       const res = await fetch(`${base}/api/agents/${SCOUT_SLUG}/messages`, {
@@ -95,35 +96,75 @@ export default function EventMode() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullText = "";
+      let streamErrored = false;
+      let buffer = "";
 
-      while (true) {
+      const handleLine = (line: string): boolean => {
+        if (!line.startsWith("data: ")) return true;
+        let evt: { type?: string; text?: string; message?: string } | null = null;
+        try {
+          evt = JSON.parse(line.slice(6));
+        } catch {
+          return true;
+        }
+        if (!evt) return true;
+        if (evt.type === "chunk") {
+          fullText += evt.text ?? "";
+          setStreamText(fullText);
+        } else if (evt.type === "done") {
+          if (!assistantAppended) {
+            assistantAppended = true;
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: Date.now() + 1,
+                agentId: agent.id,
+                role: "assistant",
+                content: fullText,
+                createdAt: new Date().toISOString(),
+              },
+            ]);
+            setStreamText("");
+          }
+        } else if (evt.type === "error") {
+          streamErrored = true;
+          return false;
+        }
+        return true;
+      };
+
+      outer: while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split("\n")) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const evt = JSON.parse(line.slice(6));
-            if (evt.type === "chunk") {
-              fullText += evt.text;
-              setStreamText(fullText);
-            } else if (evt.type === "done") {
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: Date.now() + 1,
-                  agentId: agent.id,
-                  role: "assistant",
-                  content: fullText,
-                  createdAt: new Date().toISOString(),
-                },
-              ]);
-              setStreamText("");
-            }
-          } catch {}
+        if (done) {
+          buffer += decoder.decode();
+          const tail = buffer.split("\n");
+          for (const line of tail) {
+            if (!handleLine(line)) break outer;
+          }
+          break;
+        }
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n");
+        buffer = parts.pop() ?? "";
+        for (const line of parts) {
+          if (!handleLine(line)) break outer;
         }
       }
+
+      if (streamErrored) throw new Error("Stream error");
     } catch {
+      if (!assistantAppended) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 2,
+            agentId: agent.id,
+            role: "assistant",
+            content: "Sorry, I ran into an issue. Try again?",
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+      }
       setStreamText("");
     } finally {
       setStreaming(false);
@@ -131,7 +172,7 @@ export default function EventMode() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-background flex flex-col">
       <div className="border-b border-border bg-background px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/">
@@ -151,8 +192,8 @@ export default function EventMode() {
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0 overflow-hidden" style={{ height: "calc(100vh - 53px)" }}>
-        <div className="flex flex-col border-r border-border overflow-hidden">
+      <div className="flex-1 lg:min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_320px] lg:grid-rows-[1fr] gap-0">
+        <div className="flex flex-col lg:border-r border-border lg:overflow-hidden lg:min-h-0 min-h-[60vh]">
           <div className="border-b border-border px-6 py-5">
             {agent ? (
               <div className="flex items-center gap-4 flex-wrap">
@@ -286,7 +327,7 @@ export default function EventMode() {
           )}
         </div>
 
-        <div className="overflow-y-auto bg-secondary/30 flex flex-col">
+        <div className="lg:overflow-y-auto lg:min-h-0 bg-secondary/30 flex flex-col border-t lg:border-t-0 border-border">
           <div className="px-4 py-3 border-b border-border">
             <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Live activity
