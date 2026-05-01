@@ -87,11 +87,6 @@ export async function seed() {
 const WANDERBIRD_SLUG = "wanderbird";
 
 async function seedWanderbird() {
-  // Wanderbird is the demo travel-concierge agent: it actually calls the
-  // Viator search tool in chat and surfaces real (or labeled-demo) activity
-  // cards with affiliate-tracked book links. Partner id is read from env so
-  // the deployed demo can earn real commission attribution; if unset the
-  // affiliate URL is still well-formed and the click route still tracks.
   const partnerId = process.env.WANDERBIRD_VIATOR_PARTNER_ID ?? null;
 
   const [agent] = await db

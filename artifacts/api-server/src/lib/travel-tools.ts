@@ -1,15 +1,4 @@
-/**
- * Travel-concierge tool layer for the chat pipeline.
- *
- * Defines the Gemini function-call schema for `searchViatorActivities`
- * and the server-side handler that turns a model's tool call into a
- * structured result the chat UI can render as activity cards.
- *
- * Kept narrow on purpose: it exposes ONE tool today (Viator search) but
- * is structured so a second tool (e.g. `getActivityDetails`) could be
- * added without touching the messages route. The route only needs to
- * know `getToolDeclarations` and `runTool` — everything else stays here.
- */
+// Gemini function-call layer for the travel-concierge `searchViatorActivities` tool.
 import { Type, type FunctionDeclaration } from "@workspace/integrations-gemini-ai";
 import { searchActivities, buildAffiliateUrl, type ViatorActivity } from "./viator";
 import { logger } from "./logger";

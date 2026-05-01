@@ -141,6 +141,8 @@ export default function AgentProfile() {
   const [walletInput, setWalletInput] = useState("");
   const [walletAgentIdInput, setWalletAgentIdInput] = useState("");
   const [walletInputError, setWalletInputError] = useState<string | null>(null);
+  const [travelEnabledInput, setTravelEnabledInput] = useState(false);
+  const [partnerIdInput, setPartnerIdInput] = useState("");
 
   const profileUrl = typeof window !== "undefined"
     ? `${window.location.origin}/agent/${slug}`
@@ -269,15 +271,15 @@ export default function AgentProfile() {
         setWalletAgentIdInput("");
         setWalletInputError(null);
         toast({
-          title: "EconomyOS wallet attached",
-          description: "Future tips will route through this address.",
+          title: "Agent settings saved",
+          description: "Wallet, travel concierge, and partner id updated.",
         });
       },
       onError: (err: unknown) => {
         const description =
-          err instanceof Error ? err.message : "Could not save wallet";
+          err instanceof Error ? err.message : "Could not save settings";
         toast({
-          title: "Failed to update wallet",
+          title: "Failed to update agent settings",
           description,
           variant: "destructive",
         });
@@ -288,11 +290,8 @@ export default function AgentProfile() {
   const handleSubmitWallet = () => {
     const trimmedAddress = walletInput.trim();
     const trimmedAgentId = walletAgentIdInput.trim();
-    if (!trimmedAddress) {
-      setWalletInputError("Wallet address is required");
-      return;
-    }
-    if (!/^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)) {
+    const trimmedPartnerId = partnerIdInput.trim();
+    if (trimmedAddress && !/^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)) {
       setWalletInputError("Must be a valid 0x… EVM address (42 chars)");
       return;
     }
@@ -300,8 +299,14 @@ export default function AgentProfile() {
     updateAgent.mutate({
       slug,
       data: {
-        virtualsWalletAddress: trimmedAddress,
+        virtualsWalletAddress: trimmedAddress === "" ? null : trimmedAddress,
         virtualsAgentId: trimmedAgentId === "" ? null : trimmedAgentId,
+        isTravelConcierge: travelEnabledInput,
+        viatorPartnerId: travelEnabledInput
+          ? trimmedPartnerId === ""
+            ? null
+            : trimmedPartnerId
+          : null,
       },
     });
   };
@@ -309,6 +314,8 @@ export default function AgentProfile() {
   const openWalletDialog = () => {
     setWalletInput(agent?.virtualsWalletAddress ?? "");
     setWalletAgentIdInput(agent?.virtualsAgentId ?? "");
+    setTravelEnabledInput(agent?.isTravelConcierge ?? false);
+    setPartnerIdInput(agent?.viatorPartnerId ?? "");
     setWalletInputError(null);
     setWalletDialogOpen(true);
   };
@@ -390,9 +397,18 @@ export default function AgentProfile() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
             <LifecycleBadge stage={agent.lifecycleStage} />
             <MoodBadge mood={agent.mood} />
+            {agent.isTravelConcierge && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700"
+                title="Travel concierge — books real Viator activities"
+                data-testid="badge-travel-header"
+              >
+                🌍 Travel concierge
+              </span>
+            )}
             {agent.parentSlug && (
               <span className="text-xs text-muted-foreground">
                 · forked from{" "}
@@ -1049,13 +1065,10 @@ export default function AgentProfile() {
       <Dialog open={walletDialogOpen} onOpenChange={setWalletDialogOpen}>
         <DialogContent className="sm:max-w-md" data-testid="dialog-wallet">
           <DialogHeader>
-            <DialogTitle>
-              {agent.virtualsWalletAddress ? "Update EconomyOS wallet" : "Attach EconomyOS wallet"}
-            </DialogTitle>
+            <DialogTitle>Agent settings</DialogTitle>
             <DialogDescription>
-              Provision a wallet on Virtuals (EconomyOS) and paste it here.
-              Once attached, future tips will create on-chain ACP jobs you can
-              verify on Basescan.
+              Wallet, EconomyOS identity, and travel-concierge configuration
+              for this agent.
             </DialogDescription>
           </DialogHeader>
 
@@ -1110,6 +1123,57 @@ export default function AgentProfile() {
               Provision a wallet on Virtuals
               <ExternalLink className="w-3 h-3" />
             </a>
+
+            <div className="rounded-lg border border-border bg-card/40 p-3 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🌍</span>
+                  <div>
+                    <p className="text-sm font-medium">Travel concierge</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Books real Viator activities in chat
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={travelEnabledInput}
+                  aria-label="Travel concierge"
+                  data-testid="toggle-dialog-travel-concierge"
+                  onClick={() => setTravelEnabledInput((v) => !v)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none ${
+                    travelEnabledInput ? "bg-primary" : "bg-muted"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      travelEnabledInput ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+              {travelEnabledInput && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="dialog-viator-partner-id" className="text-xs">
+                    Viator partner id{" "}
+                    <span className="text-muted-foreground font-normal">
+                      (optional — required for commission attribution)
+                    </span>
+                  </Label>
+                  <Input
+                    id="dialog-viator-partner-id"
+                    data-testid="input-dialog-viator-partner-id"
+                    placeholder="e.g. P00123456"
+                    spellCheck={false}
+                    autoComplete="off"
+                    value={partnerIdInput}
+                    onChange={(e) => setPartnerIdInput(e.target.value)}
+                    className="font-mono text-xs"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-2">
@@ -1125,7 +1189,7 @@ export default function AgentProfile() {
               disabled={updateAgent.isPending}
               data-testid="button-save-wallet"
             >
-              {updateAgent.isPending ? "Saving…" : "Save wallet"}
+              {updateAgent.isPending ? "Saving…" : "Save settings"}
             </Button>
           </DialogFooter>
         </DialogContent>

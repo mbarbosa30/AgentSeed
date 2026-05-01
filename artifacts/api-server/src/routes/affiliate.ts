@@ -1,24 +1,4 @@
-/**
- * Affiliate click attribution + redirect.
- *
- * The chat UI renders Viator activity cards with a "Book on Viator" CTA
- * that points at:
- *
- *   GET /api/affiliate/click/:slug/:productCode?u=<encoded viator url>
- *       &h=<user handle>&p=<price>&c=<currency>&t=<title>
- *
- * We log the click to `affiliate_clicks` with a coarse commission
- * estimate, kick a small treasury bonus + lifecycle nudge on the agent,
- * and 302-redirect the user to the partner's outbound URL with the
- * agent's `pid` attached.
- *
- * Loud-failure rules:
- *   - Unknown agent     → 404 (no redirect; we won't silently send the
- *                         click to a partner without attribution).
- *   - Agent isn't a
- *     travel concierge  → 403.
- *   - Missing `u`       → 400.
- */
+// Affiliate click attribution + 302 redirect for Viator activity cards.
 import { Router, type IRouter } from "express";
 import { eq, sql, desc } from "drizzle-orm";
 import {
@@ -75,10 +55,6 @@ router.get("/affiliate/click/:slug/:productCode", clickRateLimiter, async (req, 
   const userHandle = typeof req.query.h === "string" ? req.query.h.slice(0, 64) : null;
   const productTitle = typeof req.query.t === "string" ? req.query.t.slice(0, 200) : null;
   const priceRaw = typeof req.query.p === "string" ? Number(req.query.p) : NaN;
-  // Clamp client-supplied price to a sane per-activity range so a crafted
-  // click cannot inflate logged `est_commission`. Real commission is
-  // reconciled against Viator monthly reporting, so this only protects the
-  // local stat strip from log poisoning.
   const price =
     Number.isFinite(priceRaw) && priceRaw > 0 && priceRaw <= 10_000
       ? priceRaw

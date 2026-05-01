@@ -1,23 +1,6 @@
-/**
- * Minimal Viator Partner API client used by the AgentSeed travel-concierge
- * tool-calling pipeline.
- *
- * Why this file is small on purpose
- * ---------------------------------
- * The Viator Partner API surface is enormous (products, locations, reviews,
- * pricing, supplier metadata, booking, etc.). For the bounty submission we
- * only need:
- *   - search a few activities matching a free-form query / destination
- *   - resolve a product code to a Viator product detail URL
- *   - build an affiliate deep link with the agent's `pid` attached
- *
- * If `VIATOR_API_KEY` is configured we hit the real Partner API at
- * https://api.viator.com/partner. Otherwise we serve a small, clearly
- * labeled set of canned activities so the demo agent ("Wanderbird") still
- * works end-to-end on a fresh Replit clone — but every result is tagged
- * `mode: "demo"` and a startup warning is logged. We never silently mix
- * fake data with real data.
- */
+// Minimal Viator Partner API client. Live mode when VIATOR_API_KEY is set;
+// otherwise serves a small clearly-labeled (`mode: "demo"`) catalog so the
+// demo agent works on a fresh clone. No silent mixing of real + fake data.
 import { logger } from "./logger";
 
 const PARTNER_BASE = process.env.VIATOR_API_BASE ?? "https://api.viator.com/partner";
