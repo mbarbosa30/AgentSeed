@@ -272,9 +272,19 @@ export const GetAgentTipsResponseItem = zod.object({
     ),
   acpChainId: zod.number().nullable(),
   acpStatus: zod
-    .enum(["pending", "created", "settled", "none"])
+    .enum([
+      "none",
+      "created",
+      "budget_set",
+      "funded",
+      "submitted",
+      "completed",
+      "rejected",
+      "expired",
+      "failed",
+    ])
     .describe(
-      "Surfaced ACP status: `created` when an on-chain job id exists,\n`none` when the in-app tip did not route through ACP, `pending`\nreserved for in-flight settlement, `settled` for fully completed.\n",
+      "EconomyOS ACP lifecycle:\n- `none`: in-app tip, no on-chain hop.\n- `created`: fund-transfer job exists on-chain (job id minted).\n- `budget_set` \/ `funded` \/ `submitted`: settlement worker is\n  walking the job through Virtuals' multi-step protocol.\n- `completed`: fully settled — funds delivered.\n- `rejected` \/ `expired` \/ `failed`: terminal error states.\n",
     ),
   createdAt: zod.coerce.date(),
 });

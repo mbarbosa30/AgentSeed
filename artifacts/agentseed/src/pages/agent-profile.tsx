@@ -63,6 +63,53 @@ const explorerForChain = (chainId: number): string => {
   }
 };
 
+type AcpStatusValue =
+  | "none"
+  | "created"
+  | "budget_set"
+  | "funded"
+  | "submitted"
+  | "completed"
+  | "rejected"
+  | "expired"
+  | "failed";
+
+const acpBadgeLabel = (status: AcpStatusValue | string): string => {
+  switch (status) {
+    case "completed":
+      return "✓ settled";
+    case "submitted":
+      return "📦 submitted";
+    case "funded":
+      return "💰 funded";
+    case "budget_set":
+      return "🎯 budget";
+    case "created":
+      return "⚡ ACP";
+    case "rejected":
+      return "✗ rejected";
+    case "expired":
+      return "⏱ expired";
+    case "failed":
+      return "⚠ failed";
+    default:
+      return "⚡ ACP";
+  }
+};
+
+const acpBadgeClass = (status: AcpStatusValue | string): string => {
+  switch (status) {
+    case "completed":
+      return "bg-green-500/15 text-green-600 hover:bg-green-500/25 dark:text-green-400";
+    case "rejected":
+    case "failed":
+    case "expired":
+      return "bg-destructive/15 text-destructive hover:bg-destructive/25";
+    default:
+      return "bg-primary/10 text-primary hover:bg-primary/20";
+  }
+};
+
 export default function AgentProfile() {
   const [, params] = useRoute("/agent/:slug");
   const [, setLocation] = useLocation();
@@ -121,6 +168,9 @@ export default function AgentProfile() {
     query: {
       queryKey: getGetAgentTipsQueryKey(slug),
       enabled: !!slug,
+      // Poll every 8s while the page is open so judges see ACP status
+      // (created → budget_set → funded → submitted → completed) update live.
+      refetchInterval: 8000,
     },
   });
 
@@ -692,18 +742,18 @@ export default function AgentProfile() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-xs text-accent">{t.amount} tkn</span>
-                          {t.acpStatus === "created" && t.acpJobId ? (
+                          {t.acpJobId ? (
                             <button
                               type="button"
                               onClick={() => {
                                 navigator.clipboard.writeText(String(t.acpJobId));
                                 toast({ title: `Copied ACP job #${t.acpJobId}` });
                               }}
-                              className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-mono inline-flex items-center gap-1"
+                              className={`text-[10px] px-1.5 py-0.5 rounded font-mono inline-flex items-center gap-1 ${acpBadgeClass(t.acpStatus)}`}
                               data-testid={`acp-job-${t.id}`}
-                              title={`EconomyOS ACP job ${t.acpJobId} (chain ${t.acpChainId ?? VIRTUALS_CHAIN_ID}) — click to copy id`}
+                              title={`EconomyOS ACP job ${t.acpJobId} · status: ${t.acpStatus} · chain ${t.acpChainId ?? VIRTUALS_CHAIN_ID} — click to copy id`}
                             >
-                              ⚡ ACP #{String(t.acpJobId).slice(0, 6)}
+                              {acpBadgeLabel(t.acpStatus)} #{String(t.acpJobId).slice(0, 6)}
                               <Copy className="w-2.5 h-2.5" />
                             </button>
                           ) : (

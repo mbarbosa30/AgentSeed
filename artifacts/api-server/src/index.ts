@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { seed } from "./seed";
+import { startSettlementWorker } from "./lib/acp-settlement";
 
 const rawPort = process.env["PORT"];
 
@@ -25,4 +26,5 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  startSettlementWorker();
 });

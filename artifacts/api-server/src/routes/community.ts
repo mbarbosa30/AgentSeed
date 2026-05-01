@@ -14,6 +14,7 @@ import {
 } from "@workspace/api-zod";
 import { progressLifecycle } from "../lib/lifecycle";
 import { tryCreateTipJob } from "../lib/acp";
+import { kickSettlement } from "../lib/acp-settlement";
 import { logger } from "../lib/logger";
 import { rateLimit } from "../lib/rate-limit";
 
@@ -193,19 +194,29 @@ router.post("/agents/:slug/tip", tipRateLimiter, async (req, res) => {
     agentName: agent.name,
   });
 
-  await db.insert(tipsTable).values({
-    agentId: agent.id,
-    fromHandle: body.fromHandle ?? null,
-    amount: body.amount,
-    acpJobId: acpResult?.jobId ?? null,
-    acpChainId: acpResult?.chainId ?? null,
-  });
+  const [insertedTip] = await db
+    .insert(tipsTable)
+    .values({
+      agentId: agent.id,
+      fromHandle: body.fromHandle ?? null,
+      amount: body.amount,
+      acpJobId: acpResult?.jobId ?? null,
+      acpChainId: acpResult?.chainId ?? null,
+      acpJobStatus: acpResult ? "created" : "none",
+      acpUpdatedAt: acpResult ? new Date() : null,
+    })
+    .returning({ id: tipsTable.id });
 
   if (acpResult) {
     logger.info(
       { slug, jobId: acpResult.jobId, chainId: acpResult.chainId, amount: body.amount },
       "ACP tip job created",
     );
+    // Fire-and-forget the first settlement step. Auto-settlement is gated by
+    // VIRTUALS_AUTOSETTLE_ENABLED so this is a no-op unless judges opt in.
+    void kickSettlement(insertedTip.id).catch((err) => {
+      logger.error({ err, tipId: insertedTip.id }, "ACP: kickSettlement failed");
+    });
   }
 
   const allTips = await db
@@ -347,7 +358,16 @@ router.get("/agents/:slug/tips", async (req, res) => {
       fromHandle: t.fromHandle,
       acpJobId: t.acpJobId,
       acpChainId: t.acpChainId,
-      acpStatus: t.acpJobId ? "created" : "none",
+      acpStatus: (t.acpJobId ? t.acpJobStatus : "none") as
+        | "none"
+        | "created"
+        | "budget_set"
+        | "funded"
+        | "submitted"
+        | "completed"
+        | "rejected"
+        | "expired"
+        | "failed",
       createdAt: t.createdAt.toISOString(),
     })),
   );

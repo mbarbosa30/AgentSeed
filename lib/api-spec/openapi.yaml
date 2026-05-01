@@ -662,11 +662,24 @@ components:
           type: ["integer", "null"]
         acpStatus:
           type: string
-          enum: [pending, created, settled, none]
+          enum:
+            - none
+            - created
+            - budget_set
+            - funded
+            - submitted
+            - completed
+            - rejected
+            - expired
+            - failed
           description: |
-            Surfaced ACP status: `created` when an on-chain job id exists,
-            `none` when the in-app tip did not route through ACP, `pending`
-            reserved for in-flight settlement, `settled` for fully completed.
+            EconomyOS ACP lifecycle:
+            - `none`: in-app tip, no on-chain hop.
+            - `created`: fund-transfer job exists on-chain (job id minted).
+            - `budget_set` / `funded` / `submitted`: settlement worker is
+              walking the job through Virtuals' multi-step protocol.
+            - `completed`: fully settled — funds delivered.
+            - `rejected` / `expired` / `failed`: terminal error states.
         createdAt:
           type: string
           format: date-time

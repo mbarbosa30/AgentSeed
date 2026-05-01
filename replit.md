@@ -86,15 +86,32 @@ lib/
 **How this app uses it:**
 - One **platform-level** AcpAgent acts as the ACP Client for all tips (configured via env vars below). Each AgentSeed agent acts as the **Provider** when its `virtualsWalletAddress` is set.
 - `artifacts/api-server/src/lib/acp.ts` lazy-imports the SDK only when env is configured. All failures are logged and swallowed — tips always succeed in-app.
-- Tip route (`POST /api/agents/:slug/tip`) calls `tryCreateTipJob(...)` before inserting the tip row so the on-chain job id can be persisted in the same `INSERT` (single round-trip, no follow-up `UPDATE`). The returned `jobId` is stored on `tips.acp_job_id` (and `acp_chain_id`) and surfaced in the response (`acpJobId`, `acpChainId`), the success toast (`⚡ EconomyOS job #...`), and the new `GET /api/agents/:slug/tips` history endpoint.
-- Multi-step settlement is **not** automated — it is intended to be driven by the `acp` CLI after the demo. This is documented honestly in the UI copy.
+- Tip route (`POST /api/agents/:slug/tip`) calls `tryCreateTipJob(...)` before inserting the tip row so the on-chain job id can be persisted in the same `INSERT` (single round-trip, no follow-up `UPDATE`). The returned `jobId` is stored on `tips.acp_job_id` (and `acp_chain_id`) and surfaced in the response (`acpJobId`, `acpChainId`), the success toast (`⚡ EconomyOS job #...`), and the `GET /api/agents/:slug/tips` history endpoint.
+- After insert, the route fires `kickSettlement(tipId)` which is a no-op unless `VIRTUALS_AUTOSETTLE_ENABLED=true` is set together with provider creds. With autosettle on, an in-process worker (`lib/acp-settlement.ts`) walks each tip job through `created → budget_set → funded → submitted → completed` using the platform AcpAgent (Client + Evaluator) and the configured provider AcpAgent. Each step is a single on-chain hop so judges see real Basescan confirmations as the agent profile UI polls the tips endpoint every 8s and renders a colour-coded badge per status. With autosettle off (default), jobs stay at `created` and can be advanced manually with the `acp` CLI off-band.
+- Tip→USDC denomination is configurable via `VIRTUALS_TIP_USDC_PER_TOKEN` (default `0.001`) so the demo doesn't move meaningful funds.
+- Manual cleanup: `pnpm --filter @workspace/api-server run acp:cleanup` marks any non-terminal ACP tip jobs older than `ACP_STUCK_HOURS` (default 1h) as `expired`.
 
 **Required env vars (all optional — feature degrades gracefully if missing):**
+
+*Platform (Client + Evaluator):*
 - `VIRTUALS_PLATFORM_WALLET_ADDRESS` — platform Client wallet address (`0x...`)
 - `VIRTUALS_PLATFORM_WALLET_ID` — Privy wallet id for the above
 - `VIRTUALS_PLATFORM_SIGNER_KEY` — Privy signer private key (`0x...`)
 - `VIRTUALS_BUILDER_CODE` — optional builder attribution code
 - `VIRTUALS_CHAIN_ID` — `84532` (Base Sepolia, default) or `8453` (Base mainnet)
+
+*Provider (recipient agent — single-provider demo):*
+- `VIRTUALS_PROVIDER_WALLET_ADDRESS` — provider agent wallet (must equal the agent row's `virtuals_wallet_address`)
+- `VIRTUALS_PROVIDER_WALLET_ID` — Privy wallet id for the provider
+- `VIRTUALS_PROVIDER_SIGNER_KEY` — Privy signer private key for the provider
+
+*Settlement controls:*
+- `VIRTUALS_AUTOSETTLE_ENABLED` — set to `"true"` to opt into automatic on-chain settlement; default off.
+- `VIRTUALS_TIP_USDC_PER_TOKEN` — USDC per in-app tip token (default `0.001`).
+- `VIRTUALS_SETTLEMENT_POLL_MS` — worker poll interval in ms (default `15000`).
+- `ACP_STUCK_HOURS` — cleanup script cutoff (default `1`).
+
+*Seed + frontend:*
 - `SCOUT_VIRTUALS_WALLET_ADDRESS` — Provider wallet pinned to seeded Scout agent
 - `SCOUT_VIRTUALS_AGENT_ID` — optional Virtuals Console agent id paired with above
 - `VITE_VIRTUALS_CHAIN_ID` — frontend hint (`84532` default → "Basescan (Sepolia)" link, `8453` → "Basescan" mainnet link). Should match `VIRTUALS_CHAIN_ID` on the server.
@@ -102,5 +119,6 @@ lib/
 **Schema additions:**
 - `agents.virtuals_wallet_address` (text, nullable), `agents.virtuals_agent_id` (text, nullable)
 - `tips.acp_job_id` (text, nullable), `tips.acp_chain_id` (integer, nullable)
+- `tips.acp_job_status` (text, default `'none'`), `tips.acp_updated_at` (timestamptz, nullable) — drive the settlement state machine.
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

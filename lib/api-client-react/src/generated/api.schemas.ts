@@ -170,19 +170,28 @@ export interface Supporter {
 }
 
 /**
- * Surfaced ACP status: `created` when an on-chain job id exists,
-`none` when the in-app tip did not route through ACP, `pending`
-reserved for in-flight settlement, `settled` for fully completed.
+ * EconomyOS ACP lifecycle:
+- `none`: in-app tip, no on-chain hop.
+- `created`: fund-transfer job exists on-chain (job id minted).
+- `budget_set` / `funded` / `submitted`: settlement worker is
+  walking the job through Virtuals' multi-step protocol.
+- `completed`: fully settled — funds delivered.
+- `rejected` / `expired` / `failed`: terminal error states.
 
  */
 export type TipEntryAcpStatus =
   (typeof TipEntryAcpStatus)[keyof typeof TipEntryAcpStatus];
 
 export const TipEntryAcpStatus = {
-  pending: "pending",
-  created: "created",
-  settled: "settled",
   none: "none",
+  created: "created",
+  budget_set: "budget_set",
+  funded: "funded",
+  submitted: "submitted",
+  completed: "completed",
+  rejected: "rejected",
+  expired: "expired",
+  failed: "failed",
 } as const;
 
 export interface TipEntry {
@@ -197,9 +206,13 @@ export interface TipEntry {
   acpJobId: string | null;
   /** @nullable */
   acpChainId: number | null;
-  /** Surfaced ACP status: `created` when an on-chain job id exists,
-`none` when the in-app tip did not route through ACP, `pending`
-reserved for in-flight settlement, `settled` for fully completed.
+  /** EconomyOS ACP lifecycle:
+- `none`: in-app tip, no on-chain hop.
+- `created`: fund-transfer job exists on-chain (job id minted).
+- `budget_set` / `funded` / `submitted`: settlement worker is
+  walking the job through Virtuals' multi-step protocol.
+- `completed`: fully settled — funds delivered.
+- `rejected` / `expired` / `failed`: terminal error states.
  */
   acpStatus: TipEntryAcpStatus;
   createdAt: string;
