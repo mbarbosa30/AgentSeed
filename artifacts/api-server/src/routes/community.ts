@@ -319,6 +319,39 @@ router.post("/agents/:slug/support", async (req, res) => {
   res.status(201).json(supporter);
 });
 
+router.get("/agents/:slug/tips", async (req, res) => {
+  const { slug } = SendTipParams.parse(req.params);
+  const [agent] = await db
+    .select({ id: agentsTable.id })
+    .from(agentsTable)
+    .where(eq(agentsTable.slug, slug))
+    .limit(1);
+
+  if (!agent) {
+    res.status(404).json({ error: "Agent not found" });
+    return;
+  }
+
+  const rows = await db
+    .select()
+    .from(tipsTable)
+    .where(eq(tipsTable.agentId, agent.id))
+    .orderBy(desc(tipsTable.createdAt))
+    .limit(20);
+
+  res.json(
+    rows.map((t) => ({
+      id: t.id,
+      amount: t.amount,
+      fromHandle: t.fromHandle,
+      acpJobId: t.acpJobId,
+      acpChainId: t.acpChainId,
+      acpStatus: t.acpJobId ? "created" : "none",
+      createdAt: t.createdAt.toISOString(),
+    })),
+  );
+});
+
 router.get("/agents/:slug/supporters", async (req, res) => {
   const { slug } = GetAgentSupportersParams.parse(req.params);
   const [agent] = await db

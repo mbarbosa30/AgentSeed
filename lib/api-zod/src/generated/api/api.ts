@@ -254,6 +254,33 @@ export const GetAgentSupportersResponse = zod.array(
 );
 
 /**
+ * @summary Get recent tips for an agent (with EconomyOS ACP metadata)
+ */
+export const GetAgentTipsParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const GetAgentTipsResponseItem = zod.object({
+  id: zod.number(),
+  amount: zod.number(),
+  fromHandle: zod.string().nullable(),
+  acpJobId: zod
+    .string()
+    .nullable()
+    .describe(
+      "Virtuals ACP job id (null when EconomyOS routing was not configured at tip time).",
+    ),
+  acpChainId: zod.number().nullable(),
+  acpStatus: zod
+    .enum(["pending", "created", "settled", "none"])
+    .describe(
+      "Surfaced ACP status: `created` when an on-chain job id exists,\n`none` when the in-app tip did not route through ACP, `pending`\nreserved for in-flight settlement, `settled` for fully completed.\n",
+    ),
+  createdAt: zod.coerce.date(),
+});
+export const GetAgentTipsResponse = zod.array(GetAgentTipsResponseItem);
+
+/**
  * @summary Get Proof-of-Usefulness stats for agent
  */
 export const GetAgentStatsParams = zod.object({

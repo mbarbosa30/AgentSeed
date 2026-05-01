@@ -31,6 +31,7 @@ import type {
   SendTipBody,
   SubmitVoteBody,
   Supporter,
+  TipEntry,
   TreasuryInfo,
   VoteProposal,
 } from "./api.schemas";
@@ -1076,6 +1077,93 @@ export function useGetAgentSupporters<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetAgentSupportersQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get recent tips for an agent (with EconomyOS ACP metadata)
+ */
+export const getGetAgentTipsUrl = (slug: string) => {
+  return `/api/agents/${slug}/tips`;
+};
+
+export const getAgentTips = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<TipEntry[]> => {
+  return customFetch<TipEntry[]>(getGetAgentTipsUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAgentTipsQueryKey = (slug: string) => {
+  return [`/api/agents/${slug}/tips`] as const;
+};
+
+export const getGetAgentTipsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAgentTips>>,
+  TError = ErrorType<unknown>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAgentTips>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAgentTipsQueryKey(slug);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAgentTips>>> = ({
+    signal,
+  }) => getAgentTips(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAgentTips>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAgentTipsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAgentTips>>
+>;
+export type GetAgentTipsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get recent tips for an agent (with EconomyOS ACP metadata)
+ */
+
+export function useGetAgentTips<
+  TData = Awaited<ReturnType<typeof getAgentTips>>,
+  TError = ErrorType<unknown>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAgentTips>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAgentTipsQueryOptions(slug, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

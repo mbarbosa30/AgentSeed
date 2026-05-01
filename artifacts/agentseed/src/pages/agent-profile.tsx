@@ -25,6 +25,7 @@ import {
   useGetAgentStats,
   useGetAgentVotes,
   useGetAgentSupporters,
+  useGetAgentTips,
   useSubmitVote,
   useSendTip,
   useAddSupporter,
@@ -35,6 +36,7 @@ import {
   getGetAgentStatsQueryKey,
   getGetAgentVotesQueryKey,
   getGetAgentSupportersQueryKey,
+  getGetAgentTipsQueryKey,
   type AgentMessage,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -115,6 +117,13 @@ export default function AgentProfile() {
     },
   });
 
+  const { data: recentTips = [] } = useGetAgentTips(slug, {
+    query: {
+      queryKey: getGetAgentTipsQueryKey(slug),
+      enabled: !!slug,
+    },
+  });
+
   useEffect(() => {
     setLocalMessages(messages);
   }, [messages]);
@@ -134,6 +143,7 @@ export default function AgentProfile() {
       onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: getGetAgentQueryKey(slug) });
         queryClient.invalidateQueries({ queryKey: getGetAgentStatsQueryKey(slug) });
+        queryClient.invalidateQueries({ queryKey: getGetAgentTipsQueryKey(slug) });
         const extras: string[] = [];
         if (data.isBuybackTip) extras.push("🔥 Buyback burn triggered");
         if (data.lifecycleAdvanced) extras.push(`🌱 Evolved to ${data.lifecycleStage}`);
@@ -653,6 +663,62 @@ export default function AgentProfile() {
                     ))}
                     {supporters.length === 0 && (
                       <p className="text-sm text-muted-foreground">No supporters yet — be the first!</p>
+                    )}
+                  </div>
+                </Card>
+
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-1 flex items-center gap-2">
+                    <Coins className="w-4 h-4 text-accent" />
+                    Recent tips
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Last 20 tips. Tips routed through EconomyOS show an on-chain ACP job id.
+                  </p>
+                  <div className="space-y-2" data-testid="recent-tips-list">
+                    {recentTips.map((t) => {
+                      const explorer = explorerForChain(t.acpChainId ?? VIRTUALS_CHAIN_ID);
+                      return (
+                        <div
+                          key={t.id}
+                          className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0"
+                          data-testid={`tip-${t.id}`}
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-muted-foreground">
+                              {t.fromHandle ? `@${t.fromHandle}` : "anon"}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground/70">
+                              {new Date(t.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs text-accent">{t.amount} tkn</span>
+                            {t.acpStatus === "created" && t.acpJobId ? (
+                              <a
+                                href={`${explorer}/tx/${t.acpJobId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-mono"
+                                data-testid={`acp-job-${t.id}`}
+                                title={`EconomyOS ACP job ${t.acpJobId} — click to view on explorer`}
+                              >
+                                ⚡ ACP #{String(t.acpJobId).slice(0, 6)}
+                              </a>
+                            ) : (
+                              <span
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
+                                title="In-app tip (EconomyOS routing not configured at tip time)"
+                              >
+                                in-app
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {recentTips.length === 0 && (
+                      <p className="text-sm text-muted-foreground">No tips yet.</p>
                     )}
                   </div>
                 </Card>

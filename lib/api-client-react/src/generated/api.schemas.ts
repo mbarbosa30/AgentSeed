@@ -169,6 +169,42 @@ export interface Supporter {
   createdAt: string;
 }
 
+/**
+ * Surfaced ACP status: `created` when an on-chain job id exists,
+`none` when the in-app tip did not route through ACP, `pending`
+reserved for in-flight settlement, `settled` for fully completed.
+
+ */
+export type TipEntryAcpStatus =
+  (typeof TipEntryAcpStatus)[keyof typeof TipEntryAcpStatus];
+
+export const TipEntryAcpStatus = {
+  pending: "pending",
+  created: "created",
+  settled: "settled",
+  none: "none",
+} as const;
+
+export interface TipEntry {
+  id: number;
+  amount: number;
+  /** @nullable */
+  fromHandle: string | null;
+  /**
+   * Virtuals ACP job id (null when EconomyOS routing was not configured at tip time).
+   * @nullable
+   */
+  acpJobId: string | null;
+  /** @nullable */
+  acpChainId: number | null;
+  /** Surfaced ACP status: `created` when an on-chain job id exists,
+`none` when the in-app tip did not route through ACP, `pending`
+reserved for in-flight settlement, `settled` for fully completed.
+ */
+  acpStatus: TipEntryAcpStatus;
+  createdAt: string;
+}
+
 export interface BondingCurvePoint {
   t: number;
   price: number;

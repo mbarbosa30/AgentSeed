@@ -322,6 +322,27 @@ paths:
                 items:
                   $ref: "#/components/schemas/Supporter"
 
+  /agents/{slug}/tips:
+    get:
+      operationId: getAgentTips
+      tags: [community]
+      summary: Get recent tips for an agent (with EconomyOS ACP metadata)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Recent tips
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TipEntry"
+
   /agents/{slug}/stats:
     get:
       operationId: getAgentStats
@@ -623,6 +644,39 @@ components:
         - agentId
         - nickname
         - tokens
+        - createdAt
+
+    TipEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount:
+          type: number
+        fromHandle:
+          type: ["string", "null"]
+        acpJobId:
+          type: ["string", "null"]
+          description: Virtuals ACP job id (null when EconomyOS routing was not configured at tip time).
+        acpChainId:
+          type: ["integer", "null"]
+        acpStatus:
+          type: string
+          enum: [pending, created, settled, none]
+          description: |
+            Surfaced ACP status: `created` when an on-chain job id exists,
+            `none` when the in-app tip did not route through ACP, `pending`
+            reserved for in-flight settlement, `settled` for fully completed.
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - amount
+        - fromHandle
+        - acpJobId
+        - acpChainId
+        - acpStatus
         - createdAt
 
     AgentStats:
