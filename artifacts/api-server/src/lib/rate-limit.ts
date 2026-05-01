@@ -17,6 +17,12 @@ export function rateLimit(opts: {
   windowMs: number;
   max: number;
   name: string;
+  /**
+   * Override the default per-IP keying. Useful when the limit should be
+   * scoped to e.g. the requested resource (per-agent slug) instead of the
+   * caller. Return `null` to bypass the limit for this request.
+   */
+  keyBy?: (req: Request) => string | null;
 }): RequestHandler {
   const buckets = new Map<string, Bucket>();
 
@@ -30,8 +36,17 @@ export function rateLimit(opts: {
   if (typeof gc.unref === "function") gc.unref();
 
   return (req: Request, res: Response, next: NextFunction) => {
-    const ip = (req.ip ?? req.socket.remoteAddress ?? "unknown").toString();
-    const key = `${opts.name}:${ip}`;
+    let scope: string | null;
+    if (opts.keyBy) {
+      scope = opts.keyBy(req);
+      if (scope === null) {
+        next();
+        return;
+      }
+    } else {
+      scope = (req.ip ?? req.socket.remoteAddress ?? "unknown").toString();
+    }
+    const key = `${opts.name}:${scope}`;
     const now = Date.now();
     const bucket = buckets.get(key);
 
