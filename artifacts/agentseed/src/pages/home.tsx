@@ -109,57 +109,122 @@ export default function Home() {
       <Navbar />
 
       {!showForm && (
-        <section className="border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 py-20 md:py-28">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 text-[12px] text-muted-foreground font-mono mb-8">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                v0.1 — agents protocol
+        <>
+          <section className="border-b border-border">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-24">
+              <div className="max-w-2xl">
+                <div className="inline-flex items-center gap-2 text-[12px] text-muted-foreground font-mono mb-8">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  v0.1 — proof-of-usefulness agents
+                </div>
+                <h1 className="text-[40px] md:text-[56px] leading-[1.05] font-semibold tracking-tight text-foreground mb-5">
+                  Every agent is its own coin.
+                </h1>
+                <p className="text-[16px] md:text-[17px] text-muted-foreground leading-relaxed mb-10 max-w-xl">
+                  Launch an AI agent backed by a bonding curve. Its price grows
+                  with usefulness, its treasury funds its evolution, and its
+                  supporters shape what it becomes — from egg to guild.
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    data-testid="button-create-agent"
+                    size="lg"
+                    onClick={() => setShowForm(true)}
+                    className="gap-1.5"
+                  >
+                    Create an agent
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    data-testid="button-view-agents"
+                    size="lg"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => document.getElementById("agents-grid")?.scrollIntoView({ behavior: "smooth" })}
+                  >
+                    Browse agents
+                  </Button>
+                </div>
+                <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-6 mt-16 border-t border-border pt-8">
+                  <div>
+                    <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Memory</dt>
+                    <dd className="text-sm text-foreground">Persistent &amp; auto-summarized</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Token</dt>
+                    <dd className="text-sm text-foreground">Bonding curve price</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Treasury</dt>
+                    <dd className="text-sm text-foreground">Tips fund buyback burns</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Community</dt>
+                    <dd className="text-sm text-foreground">Holders vote usefulness</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Lifecycle</dt>
+                    <dd className="text-sm text-foreground">Egg → hatchling → guild</dd>
+                  </div>
+                </dl>
               </div>
-              <h1 className="text-[40px] md:text-[52px] leading-[1.05] font-semibold tracking-tight text-foreground mb-5">
-                Launch an AI agent with its own economy.
-              </h1>
-              <p className="text-[16px] text-muted-foreground leading-relaxed mb-10 max-w-xl">
-                Each agent comes with memory, a token, a treasury, and a community
-                that shapes how it evolves — from a quiet beginning to a full guild.
-              </p>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button
-                  data-testid="button-create-agent"
-                  size="lg"
-                  onClick={() => setShowForm(true)}
-                  className="gap-1.5"
-                >
-                  Create an agent
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-                <Button
-                  data-testid="button-view-agents"
-                  size="lg"
-                  variant="ghost"
-                  className="text-muted-foreground hover:text-foreground"
-                  onClick={() => document.getElementById("agents-grid")?.scrollIntoView({ behavior: "smooth" })}
-                >
-                  Browse agents
-                </Button>
-              </div>
-              <dl className="grid grid-cols-3 gap-8 mt-16 max-w-md border-t border-border pt-8">
-                <div>
-                  <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Brain</dt>
-                  <dd className="text-sm text-foreground">AI-powered</dd>
-                </div>
-                <div>
-                  <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Token</dt>
-                  <dd className="text-sm text-foreground">Bonding curve</dd>
-                </div>
-                <div>
-                  <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Governance</dt>
-                  <dd className="text-sm text-foreground">Community-led</dd>
-                </div>
-              </dl>
             </div>
-          </div>
-        </section>
+          </section>
+
+          <section className="border-b border-border bg-muted/20">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-20">
+              <div className="max-w-2xl mb-10">
+                <h2 className="text-[24px] md:text-[28px] font-semibold tracking-tight text-foreground mb-3">
+                  How it works
+                </h2>
+                <p className="text-[15px] text-muted-foreground leading-relaxed">
+                  AgentSeed makes usefulness the source of value. The more an
+                  agent helps, the more its coin is worth and the further it
+                  evolves.
+                </p>
+              </div>
+              <ol className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <li className="rounded-xl border border-border bg-background p-5">
+                  <div className="text-[11px] font-mono text-muted-foreground mb-3">01</div>
+                  <h3 className="text-[15px] font-semibold text-foreground mb-1.5">
+                    Mint the agent and its coin
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Define a mission, personality, and ticker. The agent goes
+                    live instantly with its own token, treasury, and memory.
+                  </p>
+                </li>
+                <li className="rounded-xl border border-border bg-background p-5">
+                  <div className="text-[11px] font-mono text-muted-foreground mb-3">02</div>
+                  <h3 className="text-[15px] font-semibold text-foreground mb-1.5">
+                    People use it, tip it, vote on it
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Conversations build memory. Tips flow into the treasury and
+                    trigger buyback burns on the bonding curve. Holders vote on
+                    what was actually useful.
+                  </p>
+                </li>
+                <li className="rounded-xl border border-border bg-background p-5">
+                  <div className="text-[11px] font-mono text-muted-foreground mb-3">03</div>
+                  <h3 className="text-[15px] font-semibold text-foreground mb-1.5">
+                    The agent levels up
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Treasury and usefulness drive lifecycle stages — egg,
+                    hatchling, worker, guild — unlocking new community features
+                    along the way.
+                  </p>
+                </li>
+              </ol>
+              <p className="text-xs text-muted-foreground mt-8 max-w-2xl">
+                Pairs cleanly with EconomyOS — which gives agents identity,
+                capital, commerce, and compute. AgentSeed is the
+                proof-of-usefulness layer on top.
+              </p>
+            </div>
+          </section>
+        </>
       )}
 
       {showForm && (
