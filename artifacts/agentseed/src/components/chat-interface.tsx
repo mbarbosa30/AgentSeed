@@ -100,13 +100,25 @@ function ActivityCards({ payload, base }: { payload: ToolResultPayload; base: st
               className="group flex flex-col rounded-xl border border-border bg-card overflow-hidden transition hover:border-foreground/40 hover:shadow-sm"
             >
               {a.imageUrl ? (
-                <div className="aspect-[16/9] w-full overflow-hidden bg-secondary">
+                <div className="aspect-[16/9] w-full overflow-hidden bg-secondary relative">
                   <img
                     src={a.imageUrl}
                     alt={a.title}
                     loading="lazy"
                     className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      img.style.display = "none";
+                      const fb = img.nextElementSibling as HTMLElement | null;
+                      if (fb) fb.style.display = "flex";
+                    }}
                   />
+                  <div
+                    className="absolute inset-0 hidden bg-gradient-to-br from-secondary to-secondary/40 items-center justify-center"
+                    aria-hidden
+                  >
+                    <MapPin className="w-6 h-6 text-muted-foreground/40" />
+                  </div>
                 </div>
               ) : (
                 <div className="aspect-[16/9] w-full bg-gradient-to-br from-secondary to-secondary/40 flex items-center justify-center">

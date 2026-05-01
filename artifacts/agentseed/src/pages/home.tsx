@@ -261,6 +261,32 @@ export default function Home() {
             <p className="text-muted-foreground text-sm mt-1.5">
               Define its identity. It will be live instantly.
             </p>
+            <div className="mt-4">
+              <button
+                type="button"
+                data-testid="button-preset-travel-concierge"
+                onClick={() => {
+                  form.setValue("name", "Wanderbird Jr");
+                  form.setValue(
+                    "mission",
+                    "Help travelers discover and book unforgettable activities anywhere in the world.",
+                  );
+                  form.setValue(
+                    "personality",
+                    "Warm, curious, and well-traveled. Recommends activities like a friend who's been everywhere — concise, honest about trade-offs, never pushy.",
+                  );
+                  form.setValue("tokenSymbol", "WNDR");
+                  form.setValue(
+                    "firstTask",
+                    "Suggest 3 unforgettable half-day experiences in Lisbon for a solo traveler.",
+                  );
+                  form.setValue("isTravelConcierge", true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100 transition-colors"
+              >
+                🌍 Use travel-concierge preset
+              </button>
+            </div>
           </div>
 
           <Form {...form}>
