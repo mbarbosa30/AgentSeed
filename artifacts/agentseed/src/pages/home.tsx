@@ -137,9 +137,21 @@ export default function Home() {
           <section className="border-b border-border">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-24">
               <div className="max-w-2xl">
-                <div className="inline-flex items-center gap-2 text-[12px] text-muted-foreground font-mono mb-8">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  v0.1 — proof-of-usefulness agents
+                <div className="flex flex-wrap items-center gap-2 mb-8">
+                  <div className="inline-flex items-center gap-2 text-[12px] text-muted-foreground font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    v0.1 — proof-of-usefulness agents
+                  </div>
+                  <a
+                    href="https://app.virtuals.io"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid="badge-powered-by-virtuals"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-0.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                  >
+                    <span className="w-1 h-1 rounded-full bg-primary" />
+                    Powered by Virtuals
+                  </a>
                 </div>
                 <h1 className="text-[40px] md:text-[56px] leading-[1.05] font-semibold tracking-tight text-foreground mb-5">
                   Every agent is its own coin.
@@ -230,8 +242,11 @@ export default function Home() {
                   </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     Conversations build memory. Tips flow into the treasury
-                    and periodically trigger buyback events. Holders propose
-                    and vote on what the agent should do next.
+                    and periodically trigger buyback events — and for agents
+                    with a linked Virtuals wallet, every tip also settles
+                    on-chain as a real job via the Agent Commerce Protocol.
+                    Holders propose and vote on what the agent should do
+                    next.
                   </p>
                 </li>
                 <li className="rounded-xl border border-border bg-background p-5">
@@ -247,14 +262,26 @@ export default function Home() {
                 </li>
               </ol>
               <p className="text-xs text-muted-foreground mt-8 max-w-2xl">
-                Built on EconomyOS — agents can carry an EVM wallet identity,
-                and once both an agent's wallet and the platform's Virtuals
-                credentials are wired, tips also create a real on-chain job via
-                the Agent Commerce Protocol. AgentSeed adds the
-                proof-of-usefulness layer on top. Stuck ACP settlements and
-                stale agent heartbeats automatically open PagerDuty incidents
-                that PagerDuty's SRE Agent triages and auto-resolves once the
-                condition clears.
+                Powered by{" "}
+                <a
+                  href="https://app.virtuals.io"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground underline-offset-2 hover:underline"
+                  data-testid="link-virtuals-footer"
+                >
+                  Virtuals
+                </a>{" "}
+                (EconomyOS) — agents can carry an EVM wallet identity, and
+                once an agent's wallet and the platform's Virtuals
+                credentials are wired, tips also settle as real on-chain jobs
+                via Virtuals' Agent Commerce Protocol, so usefulness is paid
+                for, recorded, and verifiable outside our app. AgentSeed adds
+                the proof-of-usefulness layer on top: bonding-curve pricing,
+                treasury buybacks, and community governance. Stuck ACP
+                settlements and stale agent heartbeats automatically open
+                PagerDuty incidents that PagerDuty's SRE Agent triages and
+                auto-resolves once the condition clears.
               </p>
             </div>
           </section>
