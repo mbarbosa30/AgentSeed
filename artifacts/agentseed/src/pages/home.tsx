@@ -170,7 +170,7 @@ export default function Home() {
                     Browse agents
                   </Button>
                 </div>
-                <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-6 mt-16 border-t border-border pt-8">
+                <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-6 mt-16 border-t border-border pt-8">
                   <div>
                     <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Memory</dt>
                     <dd className="text-sm text-foreground">Persistent &amp; auto-summarized</dd>
@@ -190,6 +190,10 @@ export default function Home() {
                   <div>
                     <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Lifecycle</dt>
                     <dd className="text-sm text-foreground">Egg → hatchling → worker → guild</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Reliability</dt>
+                    <dd className="text-sm text-foreground">Auto-paged via PagerDuty SRE Agent</dd>
                   </div>
                 </dl>
               </div>
@@ -247,7 +251,10 @@ export default function Home() {
                 and once both an agent's wallet and the platform's Virtuals
                 credentials are wired, tips also create a real on-chain job via
                 the Agent Commerce Protocol. AgentSeed adds the
-                proof-of-usefulness layer on top.
+                proof-of-usefulness layer on top. Stuck ACP settlements and
+                stale agent heartbeats automatically open PagerDuty incidents
+                that PagerDuty's SRE Agent triages and auto-resolves once the
+                condition clears.
               </p>
             </div>
           </section>
