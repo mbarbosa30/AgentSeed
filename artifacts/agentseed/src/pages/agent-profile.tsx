@@ -602,6 +602,14 @@ export default function AgentProfile() {
                   <p className="text-xs text-muted-foreground mt-2">
                     Every 5th tip triggers a 20% buyback burn 🔥
                   </p>
+                  <p
+                    className="text-[11px] text-muted-foreground mt-1 italic"
+                    data-testid="text-treasury-virtuals"
+                  >
+                    {agent.virtualsWalletAddress
+                      ? "Settlement powered by Virtuals — Agent Commerce Protocol on Base."
+                      : "Powered by Virtuals — wire an EconomyOS wallet to route tips on Base."}
+                  </p>
                 </Card>
               </div>
 

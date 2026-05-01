@@ -547,8 +547,11 @@ components:
       properties:
         amount:
           type: number
+          exclusiveMinimum: 0
+          maximum: 1000000
         fromHandle:
           type: ["string", "null"]
+          maxLength: 64
       required:
         - amount
 

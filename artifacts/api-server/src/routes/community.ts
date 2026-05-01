@@ -15,6 +15,15 @@ import {
 import { progressLifecycle } from "../lib/lifecycle";
 import { tryCreateTipJob } from "../lib/acp";
 import { logger } from "../lib/logger";
+import { rateLimit } from "../lib/rate-limit";
+
+// Tip endpoint touches DB + (optionally) the on-chain platform wallet.
+// Rate-limit per IP so a click-loop or naive bot can't drain ACP escrow.
+const tipRateLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 10,
+  name: "tip",
+});
 
 const router: IRouter = Router();
 
@@ -149,9 +158,17 @@ router.post("/agents/:slug/proposals", async (req, res) => {
   res.status(201).json(newProposalRow);
 });
 
-router.post("/agents/:slug/tip", async (req, res) => {
+router.post("/agents/:slug/tip", tipRateLimiter, async (req, res) => {
   const { slug } = SendTipParams.parse(req.params);
   const body = SendTipBody.parse(req.body);
+
+  // Orval doesn't carry OpenAPI's exclusiveMinimum/maximum into the generated
+  // Zod, so enforce here. Also protects the on-chain ACP escrow from
+  // griefing tips of 0 / negative / absurdly large amounts.
+  if (!Number.isFinite(body.amount) || body.amount <= 0 || body.amount > 1_000_000) {
+    res.status(400).json({ error: "amount must be > 0 and <= 1,000,000" });
+    return;
+  }
 
   const [agent] = await db
     .select()

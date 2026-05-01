@@ -106,8 +106,15 @@ export interface CreateProposalBody {
 }
 
 export interface SendTipBody {
+  /**
+   * @maximum 1000000
+   * @exclusiveMinimum 0
+   */
   amount: number;
-  /** @nullable */
+  /**
+   * @maxLength 64
+   * @nullable
+   */
   fromHandle?: string | null;
 }
 

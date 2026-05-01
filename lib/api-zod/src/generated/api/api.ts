@@ -181,9 +181,17 @@ export const SendTipParams = zod.object({
   slug: zod.coerce.string(),
 });
 
+export const sendTipBodyAmountExclusiveMin = 0;
+export const sendTipBodyAmountMax = 1000000;
+
+export const sendTipBodyFromHandleMax = 64;
+
 export const SendTipBody = zod.object({
-  amount: zod.number(),
-  fromHandle: zod.string().nullish(),
+  amount: zod
+    .number()
+    .gt(sendTipBodyAmountExclusiveMin)
+    .max(sendTipBodyAmountMax),
+  fromHandle: zod.string().max(sendTipBodyFromHandleMax).nullish(),
 });
 
 export const SendTipResponse = zod.object({
