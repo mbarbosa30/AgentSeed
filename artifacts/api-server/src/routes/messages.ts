@@ -9,6 +9,7 @@ import {
 } from "@workspace/api-zod";
 import { ai } from "@workspace/integrations-gemini-ai";
 import { progressLifecycle } from "../lib/lifecycle";
+import { maybeSummarizeAndStore, shouldSummarize } from "../lib/summarize";
 
 const router: IRouter = Router();
 
@@ -176,6 +177,10 @@ router.post("/agents/:slug/messages", async (req, res) => {
         memoryHighlights: updatedHighlights,
       })
       .where(eq(agentsTable.id, agent.id));
+
+    if (shouldSummarize(totalMessages)) {
+      void maybeSummarizeAndStore(agent, totalMessages);
+    }
   }
 
   res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);

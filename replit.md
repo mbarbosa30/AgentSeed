@@ -53,6 +53,7 @@ lib/
 
 - `artifacts/api-server/src/routes/community.ts` — votes, tips, supporters
 - `artifacts/api-server/src/routes/messages.ts` — Gemini SSE streaming chat
+- `artifacts/api-server/src/lib/summarize.ts` — auto-summarizes older messages into `memoryHighlights` every 50 messages (cap 10, oldest dropped)
 - `artifacts/agentseed/src/pages/agent-profile.tsx` — agent page (chat/stats/community/fork)
 - `artifacts/agentseed/src/pages/event.tsx` — Agents Day Scout event mode
 - `lib/db/src/schema/conversations.ts` — votesTable, tipsTable, supportersTable
