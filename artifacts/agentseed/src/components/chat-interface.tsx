@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User } from "lucide-react";
+import { Send, Bot, User, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { AgentMessage } from "@workspace/api-client-react";
@@ -36,6 +36,7 @@ export function ChatInterface({ slug, messages, onNewMessage, apiBase }: ChatInt
       id: Date.now(),
       agentId: 0,
       role: "user",
+      isHeartbeat: false,
       content,
       createdAt: new Date().toISOString(),
     };
@@ -77,6 +78,7 @@ export function ChatInterface({ slug, messages, onNewMessage, apiBase }: ChatInt
               id: Date.now() + 1,
               agentId: 0,
               role: "assistant",
+              isHeartbeat: false,
               content: fullText,
               createdAt: new Date().toISOString(),
             };
@@ -115,6 +117,7 @@ export function ChatInterface({ slug, messages, onNewMessage, apiBase }: ChatInt
           id: Date.now() + 1,
           agentId: 0,
           role: "assistant",
+          isHeartbeat: false,
           content: "Sorry, I ran into an issue. Try again?",
           createdAt: new Date().toISOString(),
         });
@@ -136,33 +139,59 @@ export function ChatInterface({ slug, messages, onNewMessage, apiBase }: ChatInt
             <p>Send a message to start the conversation</p>
           </div>
         )}
-        {allMessages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            data-testid={`msg-${msg.role}-${msg.id}`}
-          >
-            {msg.role === "assistant" && (
-              <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">
-                <Bot className="w-3.5 h-3.5 text-muted-foreground" />
-              </div>
-            )}
+        {allMessages.map((msg) => {
+          const isHeartbeat = msg.role === "assistant" && msg.isHeartbeat;
+          return (
             <div
-              className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                msg.role === "user"
-                  ? "bg-foreground text-background rounded-br-md"
-                  : "bg-secondary text-foreground rounded-bl-md"
-              }`}
+              key={msg.id}
+              className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              data-testid={`msg-${msg.role}-${msg.id}${isHeartbeat ? "-heartbeat" : ""}`}
             >
-              {msg.content}
-            </div>
-            {msg.role === "user" && (
-              <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">
-                <User className="w-3.5 h-3.5 text-muted-foreground" />
+              {msg.role === "assistant" && (
+                <div
+                  className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                    isHeartbeat
+                      ? "bg-primary/5 border-primary/30"
+                      : "bg-secondary border-border"
+                  }`}
+                >
+                  {isHeartbeat ? (
+                    <Sparkles className="w-3.5 h-3.5 text-primary/70" />
+                  ) : (
+                    <Bot className="w-3.5 h-3.5 text-muted-foreground" />
+                  )}
+                </div>
+              )}
+              <div className="flex flex-col gap-1 max-w-[80%]">
+                {isHeartbeat && (
+                  <span
+                    className="text-[10px] uppercase tracking-wider text-muted-foreground/70 flex items-center gap-1"
+                    data-testid={`msg-heartbeat-badge-${msg.id}`}
+                  >
+                    <Sparkles className="w-2.5 h-2.5" />
+                    Self-initiated thought
+                  </span>
+                )}
+                <div
+                  className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                    msg.role === "user"
+                      ? "bg-foreground text-background rounded-br-md"
+                      : isHeartbeat
+                        ? "bg-secondary/40 text-muted-foreground italic rounded-bl-md border border-dashed border-border/60"
+                        : "bg-secondary text-foreground rounded-bl-md"
+                  }`}
+                >
+                  {msg.content}
+                </div>
               </div>
-            )}
-          </div>
-        ))}
+              {msg.role === "user" && (
+                <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">
+                  <User className="w-3.5 h-3.5 text-muted-foreground" />
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {streaming && streamText && (
           <div className="flex gap-3 justify-start" data-testid="msg-streaming">

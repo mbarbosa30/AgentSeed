@@ -26,7 +26,11 @@ import type {
   CreateProposalBody,
   ForkAgentBody,
   GetAgentMessagesParams,
+  GetHeartbeatCandidatesParams,
   HealthStatus,
+  HeartbeatBody,
+  HeartbeatCandidate,
+  HeartbeatPostResponse,
   SendMessageBody,
   SendTipBody,
   SubmitVoteBody,
@@ -648,6 +652,209 @@ export const useSendAgentMessage = <
   TContext
 > => {
   return useMutation(getSendAgentMessageMutationOptions(options));
+};
+
+/**
+ * Returns a stage-weighted random pick of agents whose latest message
+is older than `minIdleMinutes`. Authenticated via the
+`x-heartbeat-secret` header which must match the
+`HEARTBEAT_SHARED_SECRET` env on the server.
+
+ * @summary Pick a small batch of agents the heartbeat worker should wake
+ */
+export const getGetHeartbeatCandidatesUrl = (
+  params?: GetHeartbeatCandidatesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/agents/heartbeat-candidates?${stringifiedParams}`
+    : `/api/agents/heartbeat-candidates`;
+};
+
+export const getHeartbeatCandidates = async (
+  params?: GetHeartbeatCandidatesParams,
+  options?: RequestInit,
+): Promise<HeartbeatCandidate[]> => {
+  return customFetch<HeartbeatCandidate[]>(
+    getGetHeartbeatCandidatesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetHeartbeatCandidatesQueryKey = (
+  params?: GetHeartbeatCandidatesParams,
+) => {
+  return [
+    `/api/agents/heartbeat-candidates`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetHeartbeatCandidatesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getHeartbeatCandidates>>,
+  TError = ErrorType<ApiError>,
+>(
+  params?: GetHeartbeatCandidatesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHeartbeatCandidates>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetHeartbeatCandidatesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getHeartbeatCandidates>>
+  > = ({ signal }) =>
+    getHeartbeatCandidates(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getHeartbeatCandidates>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetHeartbeatCandidatesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getHeartbeatCandidates>>
+>;
+export type GetHeartbeatCandidatesQueryError = ErrorType<ApiError>;
+
+/**
+ * @summary Pick a small batch of agents the heartbeat worker should wake
+ */
+
+export function useGetHeartbeatCandidates<
+  TData = Awaited<ReturnType<typeof getHeartbeatCandidates>>,
+  TError = ErrorType<ApiError>,
+>(
+  params?: GetHeartbeatCandidatesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHeartbeatCandidates>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetHeartbeatCandidatesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Persists a `thought` as an assistant message tagged
+`isHeartbeat=true`, then runs the same lifecycle/mood/memory update
+path that user replies use. Per-agent rate-limited to prevent a
+misconfigured cron from spamming a single agent.
+
+ * @summary Append a self-initiated thought from the heartbeat worker
+ */
+export const getPostHeartbeatUrl = (slug: string) => {
+  return `/api/agents/${slug}/heartbeat`;
+};
+
+export const postHeartbeat = async (
+  slug: string,
+  heartbeatBody: HeartbeatBody,
+  options?: RequestInit,
+): Promise<HeartbeatPostResponse> => {
+  return customFetch<HeartbeatPostResponse>(getPostHeartbeatUrl(slug), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(heartbeatBody),
+  });
+};
+
+export const getPostHeartbeatMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postHeartbeat>>,
+    TError,
+    { slug: string; data: BodyType<HeartbeatBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postHeartbeat>>,
+  TError,
+  { slug: string; data: BodyType<HeartbeatBody> },
+  TContext
+> => {
+  const mutationKey = ["postHeartbeat"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postHeartbeat>>,
+    { slug: string; data: BodyType<HeartbeatBody> }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return postHeartbeat(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostHeartbeatMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postHeartbeat>>
+>;
+export type PostHeartbeatMutationBody = BodyType<HeartbeatBody>;
+export type PostHeartbeatMutationError = ErrorType<ApiError>;
+
+/**
+ * @summary Append a self-initiated thought from the heartbeat worker
+ */
+export const usePostHeartbeat = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postHeartbeat>>,
+    TError,
+    { slug: string; data: BodyType<HeartbeatBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof postHeartbeat>>,
+  TError,
+  { slug: string; data: BodyType<HeartbeatBody> },
+  TContext
+> => {
+  return useMutation(getPostHeartbeatMutationOptions(options));
 };
 
 /**

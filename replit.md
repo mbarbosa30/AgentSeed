@@ -48,11 +48,15 @@ lib/
 - `POST /api/agents/:slug/support` — add supporter
 - `GET /api/agents/:slug/supporters` — list supporters
 - `GET /api/agents/:slug/stats` — get stats
+- `GET /api/agents/heartbeat-candidates` — Cloudflare worker only (header `x-heartbeat-secret`); returns small stage-weighted set of idle agents
+- `POST /api/agents/:slug/heartbeat` — Cloudflare worker only (same header); appends a self-initiated assistant message with `is_heartbeat=true` and runs the same lifecycle/mood/memory update as a normal reply
 
 ## Key Files
 
 - `artifacts/api-server/src/routes/community.ts` — votes, tips, supporters
 - `artifacts/api-server/src/routes/messages.ts` — Gemini SSE streaming chat
+- `artifacts/api-server/src/routes/heartbeat.ts` — heartbeat-candidates + per-agent heartbeat post (auth: `x-heartbeat-secret` vs `HEARTBEAT_SHARED_SECRET`)
+- `services/heartbeat-worker/` — Cloudflare Worker package (cron `*/15 * * * *`) that calls Gemini through CF AI Gateway and posts thoughts back to the API. See `services/heartbeat-worker/README.md`.
 - `artifacts/api-server/src/lib/summarize.ts` — auto-summarizes older messages into `memoryHighlights` every 50 messages (cap 10, oldest dropped)
 - `artifacts/agentseed/src/pages/agent-profile.tsx` — agent page (chat/stats/community/fork)
 - `artifacts/agentseed/src/pages/event.tsx` — Agents Day Scout event mode
@@ -75,6 +79,17 @@ lib/
 - `lib/api-zod/src/index.ts` must NOT be overwritten by orval — keep manual export only
 - esbuild does NOT externalize `@google/*` (removed from external list in api-server/build.mjs)
 - esbuild **does** externalize the Virtuals SDK and its peers (`@virtuals-protocol/acp-node-v2`, `@account-kit/*`, `@alchemy/*`, `@aa-sdk/*`, `@privy-io/*`, `viem`, `ox`, `socket.io-client`, `eventsource`) so the bundle stays small and Privy worker code is loaded from `node_modules` at runtime.
+- `pnpm-workspace.yaml` includes `services/*` so the Cloudflare Worker package is part of the monorepo (typecheck runs against it via the root `typecheck` script).
+
+## Cloudflare heartbeat worker (proactive thoughts)
+
+- **What it is:** an external Cloudflare Worker (`services/heartbeat-worker/`) on a `*/15 * * * *` Cron Trigger. Each tick calls `GET /api/agents/heartbeat-candidates` to get a stage-weighted set of idle agents, asks Gemini through Cloudflare AI Gateway for a 1-3 sentence self-initiated thought per agent, and posts each thought to `POST /api/agents/:slug/heartbeat`. Posted messages have `messages.is_heartbeat = true` and render with a subtle "self-initiated thought" badge in chat (`chat-interface.tsx`, `pages/event.tsx`).
+- **What it is not:** it does **not** handle user-facing chat. User messages still hit `routes/messages.ts` and stream from the Replit-side Gemini proxy. The worker only adds proactive activity between user sessions, so AI Gateway shows real heartbeat-only traffic without contaminating the realtime chat path.
+- **Auth:** both heartbeat endpoints require header `x-heartbeat-secret` matching `HEARTBEAT_SHARED_SECRET`. If the env is unset on the API server, both endpoints return `503` (fail closed).
+- **Per-agent rate limit:** `routes/heartbeat.ts` enforces max 1 heartbeat / 5 min / slug via `rate-limit.ts`'s `keyBy` option, so a misconfigured cron can't spam any one agent. Skipped 429s from the limiter are counted as `skipped`, not errors, in the worker's tick summary.
+- **Required API server env:** `HEARTBEAT_SHARED_SECRET` (Replit Secret).
+- **Required worker env (Wrangler secrets):** `GEMINI_API_KEY`, `CF_AI_GATEWAY_URL` (up to and including `…/google-ai-studio`), `AGENTSEED_API_BASE`, `HEARTBEAT_SHARED_SECRET`.
+- **Local smoke test:** `pnpm --filter @workspace/heartbeat-worker heartbeat:once` runs a single tick from your machine using `process.env`. See `services/heartbeat-worker/README.md` for the full deploy + verification flow.
 
 ## EconomyOS / Virtuals ACP Integration
 

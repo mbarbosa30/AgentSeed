@@ -5,6 +5,7 @@ import {
   Send,
   ArrowLeft,
   QrCode,
+  Sparkles,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -78,6 +79,7 @@ export default function EventMode() {
       agentId: agent.id,
       role: "user",
       content,
+      isHeartbeat: false,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, userMsg]);
@@ -121,6 +123,7 @@ export default function EventMode() {
                 agentId: agent.id,
                 role: "assistant",
                 content: fullText,
+                isHeartbeat: false,
                 createdAt: new Date().toISOString(),
               },
             ]);
@@ -161,6 +164,7 @@ export default function EventMode() {
             agentId: agent.id,
             role: "assistant",
             content: "Sorry, I ran into an issue. Try again?",
+            isHeartbeat: false,
             createdAt: new Date().toISOString(),
           },
         ]);
@@ -260,25 +264,52 @@ export default function EventMode() {
                     </p>
                   </div>
                 )}
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                    data-testid={`event-msg-${msg.role}`}
-                  >
-                    {msg.role === "assistant" && (
-                      <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">
-                        <Bot className="w-3.5 h-3.5 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${msg.role === "user" ? "bg-foreground text-background rounded-br-md" : "bg-secondary text-foreground rounded-bl-md"}`}>
-                      {msg.role === "user" && (
-                        <div className="text-[11px] opacity-60 mb-0.5">@{handle}</div>
+                {messages.map((msg) => {
+                  const isHeartbeat = msg.role === "assistant" && msg.isHeartbeat;
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                      data-testid={`event-msg-${msg.role}${isHeartbeat ? "-heartbeat" : ""}`}
+                    >
+                      {msg.role === "assistant" && (
+                        <div
+                          className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                            isHeartbeat ? "bg-primary/5 border-primary/30" : "bg-secondary border-border"
+                          }`}
+                        >
+                          {isHeartbeat ? (
+                            <Sparkles className="w-3.5 h-3.5 text-primary/70" />
+                          ) : (
+                            <Bot className="w-3.5 h-3.5 text-muted-foreground" />
+                          )}
+                        </div>
                       )}
-                      {msg.content}
+                      <div className="flex flex-col gap-1 max-w-[80%]">
+                        {isHeartbeat && (
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5" />
+                            Self-initiated thought
+                          </span>
+                        )}
+                        <div
+                          className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                            msg.role === "user"
+                              ? "bg-foreground text-background rounded-br-md"
+                              : isHeartbeat
+                                ? "bg-secondary/40 text-muted-foreground italic rounded-bl-md border border-dashed border-border/60"
+                                : "bg-secondary text-foreground rounded-bl-md"
+                          }`}
+                        >
+                          {msg.role === "user" && (
+                            <div className="text-[11px] opacity-60 mb-0.5">@{handle}</div>
+                          )}
+                          {msg.content}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {streaming && streamText && (
                   <div className="flex gap-3 justify-start">
                     <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">

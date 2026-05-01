@@ -110,7 +110,59 @@ export interface AgentMessage {
   agentId: number;
   role: AgentMessageRole;
   content: string;
+  /** True when this message was posted by the proactive heartbeat
+worker (Cloudflare cron) rather than as a reply to a user. The
+UI renders these with a subtle "self-initiated" marker.
+ */
+  isHeartbeat: boolean;
   createdAt: string;
+}
+
+export interface HeartbeatBody {
+  /**
+   * @minLength 1
+   * @maxLength 1000
+   */
+  thought: string;
+}
+
+export type HeartbeatPostResponseLifecycleStage =
+  (typeof HeartbeatPostResponseLifecycleStage)[keyof typeof HeartbeatPostResponseLifecycleStage];
+
+export const HeartbeatPostResponseLifecycleStage = {
+  egg: "egg",
+  hatchling: "hatchling",
+  worker: "worker",
+  guild: "guild",
+} as const;
+
+export interface HeartbeatPostResponse {
+  messageId: number;
+  createdAt: string;
+  lifecycleStage: HeartbeatPostResponseLifecycleStage;
+  lifecycleAdvanced: boolean;
+}
+
+export type HeartbeatCandidateLifecycleStage =
+  (typeof HeartbeatCandidateLifecycleStage)[keyof typeof HeartbeatCandidateLifecycleStage];
+
+export const HeartbeatCandidateLifecycleStage = {
+  egg: "egg",
+  hatchling: "hatchling",
+  worker: "worker",
+  guild: "guild",
+} as const;
+
+export interface HeartbeatCandidate {
+  slug: string;
+  name: string;
+  mission: string;
+  personality: string;
+  lifecycleStage: HeartbeatCandidateLifecycleStage;
+  mood: string;
+  memoryHighlights: string[];
+  /** @nullable */
+  lastActivityAt: string | null;
 }
 
 export interface SendMessageBody {
@@ -327,4 +379,17 @@ export interface ApiError {
 
 export type GetAgentMessagesParams = {
   limit?: number;
+};
+
+export type GetHeartbeatCandidatesParams = {
+  /**
+   * @minimum 1
+   * @maximum 20
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1440
+   */
+  minIdleMinutes?: number;
 };

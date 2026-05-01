@@ -188,11 +188,19 @@ export const GetAgentMessagesQueryParams = zod.object({
   limit: zod.coerce.number().optional(),
 });
 
+export const getAgentMessagesResponseIsHeartbeatDefault = false;
+
 export const GetAgentMessagesResponseItem = zod.object({
   id: zod.number(),
   agentId: zod.number(),
   role: zod.enum(["user", "assistant"]),
   content: zod.string(),
+  isHeartbeat: zod
+    .boolean()
+    .default(getAgentMessagesResponseIsHeartbeatDefault)
+    .describe(
+      'True when this message was posted by the proactive heartbeat\nworker (Cloudflare cron) rather than as a reply to a user. The\nUI renders these with a subtle \"self-initiated\" marker.\n',
+    ),
   createdAt: zod.coerce.date(),
 });
 export const GetAgentMessagesResponse = zod.array(GetAgentMessagesResponseItem);
@@ -207,6 +215,72 @@ export const SendAgentMessageParams = zod.object({
 export const SendAgentMessageBody = zod.object({
   content: zod.string(),
   userHandle: zod.string().nullish(),
+});
+
+/**
+ * Returns a stage-weighted random pick of agents whose latest message
+is older than `minIdleMinutes`. Authenticated via the
+`x-heartbeat-secret` header which must match the
+`HEARTBEAT_SHARED_SECRET` env on the server.
+
+ * @summary Pick a small batch of agents the heartbeat worker should wake
+ */
+export const getHeartbeatCandidatesQueryLimitMax = 20;
+
+export const getHeartbeatCandidatesQueryMinIdleMinutesMin = 0;
+export const getHeartbeatCandidatesQueryMinIdleMinutesMax = 1440;
+
+export const GetHeartbeatCandidatesQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(getHeartbeatCandidatesQueryLimitMax)
+    .optional(),
+  minIdleMinutes: zod.coerce
+    .number()
+    .min(getHeartbeatCandidatesQueryMinIdleMinutesMin)
+    .max(getHeartbeatCandidatesQueryMinIdleMinutesMax)
+    .optional(),
+});
+
+export const GetHeartbeatCandidatesHeader = zod.object({
+  "x-heartbeat-secret": zod.string(),
+});
+
+export const GetHeartbeatCandidatesResponseItem = zod.object({
+  slug: zod.string(),
+  name: zod.string(),
+  mission: zod.string(),
+  personality: zod.string(),
+  lifecycleStage: zod.enum(["egg", "hatchling", "worker", "guild"]),
+  mood: zod.string(),
+  memoryHighlights: zod.array(zod.string()),
+  lastActivityAt: zod.coerce.date().nullable(),
+});
+export const GetHeartbeatCandidatesResponse = zod.array(
+  GetHeartbeatCandidatesResponseItem,
+);
+
+/**
+ * Persists a `thought` as an assistant message tagged
+`isHeartbeat=true`, then runs the same lifecycle/mood/memory update
+path that user replies use. Per-agent rate-limited to prevent a
+misconfigured cron from spamming a single agent.
+
+ * @summary Append a self-initiated thought from the heartbeat worker
+ */
+export const PostHeartbeatParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const PostHeartbeatHeader = zod.object({
+  "x-heartbeat-secret": zod.string(),
+});
+
+export const postHeartbeatBodyThoughtMax = 1000;
+
+export const PostHeartbeatBody = zod.object({
+  thought: zod.string().min(1).max(postHeartbeatBodyThoughtMax),
 });
 
 /**

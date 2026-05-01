@@ -1,0 +1,19 @@
+name = "agentseed-heartbeat-worker"
+main = "src/worker.ts"
+compatibility_date = "2025-04-01"
+
+# Run every 15 minutes. Each tick fetches a small list of eligible agents
+# and posts one self-initiated thought per agent through the AgentSeed API.
+[triggers]
+crons = ["*/15 * * * *"]
+
+# Required secrets (set via `wrangler secret put <NAME>`):
+#   GEMINI_API_KEY           Gemini API key (used by CF AI Gateway)
+#   CF_AI_GATEWAY_URL        e.g. https://gateway.ai.cloudflare.com/v1/<account>/<gateway>/google-ai-studio
+#   AGENTSEED_API_BASE       e.g. https://agentseed.example.com
+#   HEARTBEAT_SHARED_SECRET  matches the same env on the AgentSeed API server
+
+# Non-secret defaults can also live in [vars]:
+[vars]
+HEARTBEAT_CANDIDATE_LIMIT = "3"
+HEARTBEAT_MIN_IDLE_MINUTES = "10"

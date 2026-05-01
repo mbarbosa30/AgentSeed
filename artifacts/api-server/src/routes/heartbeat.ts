@@ -8,9 +8,9 @@ import {
   type Agent,
 } from "@workspace/db";
 import {
-  HeartbeatBody,
-  HeartbeatParams,
-  HeartbeatCandidatesQueryParams,
+  PostHeartbeatBody,
+  PostHeartbeatParams,
+  GetHeartbeatCandidatesQueryParams,
 } from "@workspace/api-zod";
 import { progressLifecycle } from "../lib/lifecycle";
 import { logger } from "../lib/logger";
@@ -50,7 +50,10 @@ const heartbeatLimiter = rateLimit({
   windowMs: 5 * 60_000,
   max: 1,
   name: "heartbeat",
-  keyBy: (req) => req.params.slug ?? null,
+  keyBy: (req) => {
+    const slug = req.params.slug;
+    return typeof slug === "string" ? slug : null;
+  },
 });
 
 function pickMood(holderCount: number, tipCount: number): "focused" | "curious" | "confident" | "generous" | "survival" {
@@ -65,12 +68,12 @@ router.post(
   requireHeartbeatSecret,
   heartbeatLimiter,
   async (req, res) => {
-    const paramsParsed = HeartbeatParams.safeParse(req.params);
+    const paramsParsed = PostHeartbeatParams.safeParse(req.params);
     if (!paramsParsed.success) {
       res.status(400).json({ error: "Invalid slug" });
       return;
     }
-    const bodyParsed = HeartbeatBody.safeParse(req.body);
+    const bodyParsed = PostHeartbeatBody.safeParse(req.body);
     if (!bodyParsed.success) {
       const issue = bodyParsed.error.issues[0];
       res.status(400).json({
@@ -182,7 +185,7 @@ router.get(
   "/agents/heartbeat-candidates",
   requireHeartbeatSecret,
   async (req, res) => {
-    const queryParsed = HeartbeatCandidatesQueryParams.safeParse(req.query);
+    const queryParsed = GetHeartbeatCandidatesQueryParams.safeParse(req.query);
     if (!queryParsed.success) {
       res.status(400).json({ error: "Invalid query" });
       return;
