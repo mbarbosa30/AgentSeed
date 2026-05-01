@@ -264,7 +264,11 @@ async function pagerTipScan(): Promise<void> {
       }
     }
 
-    // Auto-resolve incidents for tips that have since completed.
+    // Auto-resolve incidents for tips that have since completed. We
+    // *retain* `pd_incident_id` (so admin page still lists the incident
+    // in its "recently resolved" view) and gate the local-state update
+    // on a confirmed PagerDuty resolve so a transient outage doesn't
+    // leave the incident open forever in PagerDuty.
     const resolvableRows = await db
       .select({
         tipId: tipsTable.id,
@@ -274,6 +278,7 @@ async function pagerTipScan(): Promise<void> {
       .where(
         and(
           isNotNull(tipsTable.pdIncidentId),
+          isNull(tipsTable.pdResolvedAt),
           eq(tipsTable.acpJobStatus, "completed"),
         ),
       )
@@ -281,16 +286,22 @@ async function pagerTipScan(): Promise<void> {
 
     for (const row of resolvableRows) {
       const dedupKey = `acp-tip-${row.tipId}`;
-      await resolveIncident(dedupKey);
-      // Null-out the marker so we won't re-resolve forever.
-      await db
-        .update(tipsTable)
-        .set({ pdIncidentId: null })
-        .where(eq(tipsTable.id, row.tipId));
-      logger.info(
-        { tipId: row.tipId, pdId: row.pdId },
-        "PagerDuty: ACP tip incident resolved",
-      );
+      const result = await resolveIncident(dedupKey);
+      if (result?.status === "success") {
+        await db
+          .update(tipsTable)
+          .set({ pdResolvedAt: new Date() })
+          .where(eq(tipsTable.id, row.tipId));
+        logger.info(
+          { tipId: row.tipId, pdId: row.pdId },
+          "PagerDuty: ACP tip incident resolved",
+        );
+      } else {
+        logger.warn(
+          { tipId: row.tipId, pdId: row.pdId },
+          "PagerDuty: ACP tip resolve failed — will retry on next scan",
+        );
+      }
     }
   } catch (err) {
     logger.error({ err }, "PagerDuty: pagerTipScan error");
@@ -373,12 +384,18 @@ async function heartbeatStaleCheck(): Promise<void> {
         );
       }
     } else if (!stale && existing && existing.status === "open") {
-      await resolveIncident(HEARTBEAT_DEDUP_KEY);
-      await db
-        .update(platformIncidentsTable)
-        .set({ status: "resolved", resolvedAt: new Date() })
-        .where(eq(platformIncidentsTable.id, existing.id));
-      logger.info("PagerDuty: heartbeat-stale incident resolved");
+      const result = await resolveIncident(HEARTBEAT_DEDUP_KEY);
+      if (result?.status === "success") {
+        await db
+          .update(platformIncidentsTable)
+          .set({ status: "resolved", resolvedAt: new Date() })
+          .where(eq(platformIncidentsTable.id, existing.id));
+        logger.info("PagerDuty: heartbeat-stale incident resolved");
+      } else {
+        logger.warn(
+          "PagerDuty: heartbeat-stale resolve failed — will retry on next check",
+        );
+      }
     }
   } catch (err) {
     logger.error({ err }, "PagerDuty: heartbeatStaleCheck error");

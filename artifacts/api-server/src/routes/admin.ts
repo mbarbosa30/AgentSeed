@@ -75,6 +75,7 @@ router.get(
         acpUpdatedAt: tipsTable.acpUpdatedAt,
         createdAt: tipsTable.createdAt,
         pdIncidentId: tipsTable.pdIncidentId,
+        pdResolvedAt: tipsTable.pdResolvedAt,
       })
       .from(tipsTable)
       .innerJoin(agentsTable, eq(agentsTable.id, tipsTable.agentId))
@@ -91,15 +92,16 @@ router.get(
     const incidents: AdminIncidentRow[] = [];
 
     for (const r of tipRows) {
+      const localStatus = r.pdResolvedAt ? "resolved" : r.acpStatus;
       incidents.push({
         source: "acp-tip",
         kind: "acp-tip-failure",
         dedupKey: `acp-tip-${r.tipId}`,
         pdIncidentId: r.pdIncidentId,
-        status: r.acpStatus,
+        status: localStatus,
         summary: `Tip ${r.tipId} for ${r.agentName} (${r.acpStatus})`,
         openedAt: (r.acpUpdatedAt ?? r.createdAt)?.toISOString() ?? null,
-        resolvedAt: null,
+        resolvedAt: r.pdResolvedAt?.toISOString() ?? null,
         context: {
           tipId: r.tipId,
           agentSlug: r.agentSlug,

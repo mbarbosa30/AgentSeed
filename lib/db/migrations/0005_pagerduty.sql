@@ -7,6 +7,9 @@
 ALTER TABLE "tips"
   ADD COLUMN IF NOT EXISTS "pd_incident_id" text;
 
+ALTER TABLE "tips"
+  ADD COLUMN IF NOT EXISTS "pd_resolved_at" timestamptz;
+
 CREATE TABLE IF NOT EXISTS "platform_incidents" (
   "id" serial PRIMARY KEY NOT NULL,
   "kind" text NOT NULL,
