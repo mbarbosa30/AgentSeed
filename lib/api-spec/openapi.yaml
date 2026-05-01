@@ -99,6 +99,41 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: updateAgent
+      tags: [agents]
+      summary: Update mutable agent fields (currently EconomyOS wallet identity)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAgentBody"
+      responses:
+        "200":
+          description: Updated agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
   /agents/{slug}/messages:
     get:
@@ -488,11 +523,34 @@ components:
           type: boolean
         firstTask:
           type: string
+        virtualsWalletAddress:
+          type: string
+          pattern: "^0x[a-fA-F0-9]{40}$"
+          description: Optional EVM wallet address provisioned via EconomyOS (Virtuals).
+        virtualsAgentId:
+          type: string
+          maxLength: 128
+          description: Optional Virtuals Console agent identifier paired with the wallet.
       required:
         - name
         - mission
         - personality
         - tokenSymbol
+
+    UpdateAgentBody:
+      type: object
+      description: |
+        Partial update for an agent. Currently scoped to attaching/clearing the
+        EconomyOS wallet identity. Send `null` for either field to clear it.
+      properties:
+        virtualsWalletAddress:
+          type: ["string", "null"]
+          pattern: "^0x[a-fA-F0-9]{40}$"
+          description: EVM wallet address provisioned via EconomyOS (Virtuals). Send null to clear.
+        virtualsAgentId:
+          type: ["string", "null"]
+          maxLength: 128
+          description: Virtuals Console agent identifier paired with the wallet. Send null to clear.
 
     AgentMessage:
       type: object

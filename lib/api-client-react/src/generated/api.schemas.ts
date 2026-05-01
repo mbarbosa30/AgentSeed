@@ -65,6 +65,36 @@ export interface CreateAgentBody {
   tokenSymbol: string;
   memoryPublic?: boolean;
   firstTask?: string;
+  /**
+   * Optional EVM wallet address provisioned via EconomyOS (Virtuals).
+   * @pattern ^0x[a-fA-F0-9]{40}$
+   */
+  virtualsWalletAddress?: string;
+  /**
+   * Optional Virtuals Console agent identifier paired with the wallet.
+   * @maxLength 128
+   */
+  virtualsAgentId?: string;
+}
+
+/**
+ * Partial update for an agent. Currently scoped to attaching/clearing the
+EconomyOS wallet identity. Send `null` for either field to clear it.
+
+ */
+export interface UpdateAgentBody {
+  /**
+   * EVM wallet address provisioned via EconomyOS (Virtuals). Send null to clear.
+   * @nullable
+   * @pattern ^0x[a-fA-F0-9]{40}$
+   */
+  virtualsWalletAddress?: string | null;
+  /**
+   * Virtuals Console agent identifier paired with the wallet. Send null to clear.
+   * @maxLength 128
+   * @nullable
+   */
+  virtualsAgentId?: string | null;
 }
 
 export type AgentMessageRole =

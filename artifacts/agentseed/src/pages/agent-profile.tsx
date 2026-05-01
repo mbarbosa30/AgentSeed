@@ -31,6 +31,7 @@ import {
   useAddSupporter,
   useForkAgent,
   useCreateProposal,
+  useUpdateAgent,
   getGetAgentQueryKey,
   getGetAgentMessagesQueryKey,
   getGetAgentStatsQueryKey,
@@ -48,6 +49,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
 const apiBase = import.meta.env.VITE_API_URL ?? "";
@@ -126,6 +136,10 @@ export default function AgentProfile() {
   const [forkSpec, setForkSpec] = useState("");
   const [showQr, setShowQr] = useState(false);
   const [newProposal, setNewProposal] = useState("");
+  const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+  const [walletInput, setWalletInput] = useState("");
+  const [walletAgentIdInput, setWalletAgentIdInput] = useState("");
+  const [walletInputError, setWalletInputError] = useState<string | null>(null);
 
   const profileUrl = typeof window !== "undefined"
     ? `${window.location.origin}/agent/${slug}`
@@ -236,6 +250,59 @@ export default function AgentProfile() {
       },
     },
   });
+
+  const updateAgent = useUpdateAgent({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetAgentQueryKey(slug) });
+        setWalletDialogOpen(false);
+        setWalletInput("");
+        setWalletAgentIdInput("");
+        setWalletInputError(null);
+        toast({
+          title: "EconomyOS wallet attached",
+          description: "Future tips will route through this address.",
+        });
+      },
+      onError: (err: unknown) => {
+        const description =
+          err instanceof Error ? err.message : "Could not save wallet";
+        toast({
+          title: "Failed to update wallet",
+          description,
+          variant: "destructive",
+        });
+      },
+    },
+  });
+
+  const handleSubmitWallet = () => {
+    const trimmedAddress = walletInput.trim();
+    const trimmedAgentId = walletAgentIdInput.trim();
+    if (!trimmedAddress) {
+      setWalletInputError("Wallet address is required");
+      return;
+    }
+    if (!/^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)) {
+      setWalletInputError("Must be a valid 0x… EVM address (42 chars)");
+      return;
+    }
+    setWalletInputError(null);
+    updateAgent.mutate({
+      slug,
+      data: {
+        virtualsWalletAddress: trimmedAddress,
+        virtualsAgentId: trimmedAgentId === "" ? null : trimmedAgentId,
+      },
+    });
+  };
+
+  const openWalletDialog = () => {
+    setWalletInput(agent?.virtualsWalletAddress ?? "");
+    setWalletAgentIdInput(agent?.virtualsAgentId ?? "");
+    setWalletInputError(null);
+    setWalletDialogOpen(true);
+  };
 
   const createProposal = useCreateProposal({
     mutation: {
@@ -413,9 +480,29 @@ export default function AgentProfile() {
                   {VIRTUALS_CHAIN_ID === 8453 ? "Basescan" : "Basescan (Sepolia)"}
                   <ExternalLink className="w-3 h-3" />
                 </a>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                  onClick={openWalletDialog}
+                  data-testid="button-edit-wallet"
+                >
+                  Edit
+                </Button>
               </>
             ) : (
-              <span className="italic">EconomyOS wallet pending — tips route in-app only.</span>
+              <>
+                <span className="italic">EconomyOS wallet pending — tips route in-app only.</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 px-2 text-[11px]"
+                  onClick={openWalletDialog}
+                  data-testid="button-attach-wallet"
+                >
+                  Attach wallet
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -885,6 +972,91 @@ export default function AgentProfile() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={walletDialogOpen} onOpenChange={setWalletDialogOpen}>
+        <DialogContent className="sm:max-w-md" data-testid="dialog-wallet">
+          <DialogHeader>
+            <DialogTitle>
+              {agent.virtualsWalletAddress ? "Update EconomyOS wallet" : "Attach EconomyOS wallet"}
+            </DialogTitle>
+            <DialogDescription>
+              Provision a wallet on Virtuals (EconomyOS) and paste it here.
+              Once attached, future tips will create on-chain ACP jobs you can
+              verify on Basescan.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="wallet-address" className="text-xs">
+                Wallet address
+              </Label>
+              <Input
+                id="wallet-address"
+                data-testid="input-dialog-wallet"
+                placeholder="0x…"
+                spellCheck={false}
+                autoComplete="off"
+                value={walletInput}
+                onChange={(e) => {
+                  setWalletInput(e.target.value);
+                  if (walletInputError) setWalletInputError(null);
+                }}
+                className="font-mono text-xs"
+              />
+              {walletInputError && (
+                <p className="text-xs text-destructive" data-testid="text-wallet-error">
+                  {walletInputError}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="wallet-agent-id" className="text-xs">
+                Virtuals agent id <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              <Input
+                id="wallet-agent-id"
+                data-testid="input-dialog-virtuals-agent-id"
+                placeholder="e.g. agent_abc123"
+                spellCheck={false}
+                autoComplete="off"
+                value={walletAgentIdInput}
+                onChange={(e) => setWalletAgentIdInput(e.target.value)}
+                className="font-mono text-xs"
+              />
+            </div>
+
+            <a
+              href="https://app.virtuals.io/acp/new"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+              data-testid="link-provision-wallet"
+            >
+              Provision a wallet on Virtuals
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setWalletDialogOpen(false)}
+              data-testid="button-cancel-wallet"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitWallet}
+              disabled={updateAgent.isPending}
+              data-testid="button-save-wallet"
+            >
+              {updateAgent.isPending ? "Saving…" : "Save wallet"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

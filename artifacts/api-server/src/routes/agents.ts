@@ -6,6 +6,7 @@ import {
   GetAgentParams,
   ForkAgentParams,
   ForkAgentBody,
+  UpdateAgentBody,
 } from "@workspace/api-zod";
 const router: IRouter = Router();
 
@@ -17,6 +18,21 @@ function slugify(name: string): string {
     .slice(0, 48);
 }
 
+function normalizeWalletAddress(input: string | null | undefined): string | null | undefined {
+  if (input === undefined) return undefined;
+  if (input === null) return null;
+  const trimmed = input.trim();
+  if (trimmed === "") return null;
+  return trimmed.toLowerCase();
+}
+
+function normalizeAgentId(input: string | null | undefined): string | null | undefined {
+  if (input === undefined) return undefined;
+  if (input === null) return null;
+  const trimmed = input.trim();
+  return trimmed === "" ? null : trimmed;
+}
+
 router.get("/agents", async (_req, res) => {
   const agents = await db
     .select()
@@ -26,7 +42,16 @@ router.get("/agents", async (_req, res) => {
 });
 
 router.post("/agents", async (req, res) => {
-  const body = CreateAgentBody.parse(req.body);
+  const parsed = CreateAgentBody.safeParse(req.body);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const fieldPath = issue?.path?.join(".") ?? "body";
+    res.status(400).json({
+      error: `${fieldPath}: ${issue?.message ?? "Invalid request body"}`,
+    });
+    return;
+  }
+  const body = parsed.data;
 
   let baseSlug = slugify(body.name);
   if (!baseSlug) baseSlug = "agent";
@@ -46,6 +71,9 @@ router.post("/agents", async (req, res) => {
 
   const tokenSymbol = body.tokenSymbol.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
 
+  const walletAddress = normalizeWalletAddress(body.virtualsWalletAddress) ?? null;
+  const virtualsAgentId = normalizeAgentId(body.virtualsAgentId) ?? null;
+
   const [agent] = await db
     .insert(agentsTable)
     .values({
@@ -61,6 +89,8 @@ router.post("/agents", async (req, res) => {
       memoryPublic: body.memoryPublic ?? true,
       firstTask: body.firstTask ?? null,
       parentSlug: null,
+      virtualsWalletAddress: walletAddress,
+      virtualsAgentId: virtualsAgentId,
     })
     .returning();
 
@@ -95,6 +125,53 @@ router.get("/agents/:slug", async (req, res) => {
   }
 
   res.json(agent);
+});
+
+router.patch("/agents/:slug", async (req, res) => {
+  const { slug } = GetAgentParams.parse(req.params);
+  const parsed = UpdateAgentBody.safeParse(req.body);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const fieldPath = issue?.path?.join(".") ?? "body";
+    res.status(400).json({
+      error: `${fieldPath}: ${issue?.message ?? "Invalid request body"}`,
+    });
+    return;
+  }
+  const body = parsed.data;
+
+  const [existing] = await db
+    .select()
+    .from(agentsTable)
+    .where(eq(agentsTable.slug, slug))
+    .limit(1);
+
+  if (!existing) {
+    res.status(404).json({ error: "Agent not found" });
+    return;
+  }
+
+  const updates: Partial<typeof agentsTable.$inferInsert> = {};
+
+  if (Object.prototype.hasOwnProperty.call(body, "virtualsWalletAddress")) {
+    updates.virtualsWalletAddress = normalizeWalletAddress(body.virtualsWalletAddress) ?? null;
+  }
+  if (Object.prototype.hasOwnProperty.call(body, "virtualsAgentId")) {
+    updates.virtualsAgentId = normalizeAgentId(body.virtualsAgentId) ?? null;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    res.json(existing);
+    return;
+  }
+
+  const [updated] = await db
+    .update(agentsTable)
+    .set(updates)
+    .where(eq(agentsTable.slug, slug))
+    .returning();
+
+  res.json(updated);
 });
 
 router.post("/agents/:slug/fork", async (req, res) => {

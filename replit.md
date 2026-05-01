@@ -121,4 +121,8 @@ lib/
 - `tips.acp_job_id` (text, nullable), `tips.acp_chain_id` (integer, nullable)
 - `tips.acp_job_status` (text, default `'none'`), `tips.acp_updated_at` (timestamptz, nullable) — drive the settlement state machine.
 
+**Per-agent wallet onboarding:**
+- The `POST /api/agents` create-form accepts optional `virtualsWalletAddress` (must match `^0x[a-fA-F0-9]{40}$`, lowercased before persist) and `virtualsAgentId`. The home create form on `/` exposes both fields plus a "Provision wallet" link to `app.virtuals.io/acp/new`.
+- `PATCH /api/agents/:slug` accepts a partial `UpdateAgentBody` (`virtualsWalletAddress`, `virtualsAgentId`; `null` clears) and is wired to a "Wallet pending → Attach wallet" CTA on the agent profile, plus an "Edit" affordance once a wallet is attached.
+
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowRight, Cpu } from "lucide-react";
+import { ArrowRight, Cpu, ExternalLink } from "lucide-react";
 import {
   useListAgents,
   useCreateAgent,
@@ -52,6 +52,15 @@ const createAgentSchema = z.object({
     .regex(/^[A-Za-z0-9]+$/, "Only letters and numbers"),
   firstTask: z.string().max(200).optional(),
   memoryPublic: z.boolean().default(true),
+  virtualsWalletAddress: z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (v) => !v || /^0x[a-fA-F0-9]{40}$/.test(v),
+      "Must be a valid 0x… EVM address (42 chars)",
+    ),
+  virtualsAgentId: z.string().trim().max(128).optional(),
 });
 
 type CreateAgentForm = z.infer<typeof createAgentSchema>;
@@ -88,10 +97,14 @@ export default function Home() {
       tokenSymbol: "",
       firstTask: "",
       memoryPublic: true,
+      virtualsWalletAddress: "",
+      virtualsAgentId: "",
     },
   });
 
   const onSubmit = (data: CreateAgentForm) => {
+    const wallet = data.virtualsWalletAddress?.trim() || undefined;
+    const agentId = data.virtualsAgentId?.trim() || undefined;
     createAgent.mutate({
       data: {
         name: data.name,
@@ -100,6 +113,8 @@ export default function Home() {
         tokenSymbol: data.tokenSymbol.toUpperCase(),
         firstTask: data.firstTask || undefined,
         memoryPublic: data.memoryPublic,
+        virtualsWalletAddress: wallet,
+        virtualsAgentId: agentId,
       },
     });
   };
@@ -350,6 +365,67 @@ export default function Home() {
                   </FormItem>
                 )}
               />
+
+              <div className="rounded-lg border border-border px-4 py-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">EconomyOS wallet <span className="text-muted-foreground font-normal">(optional)</span></p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Attach a Virtuals (EconomyOS) EVM wallet so tips can route on-chain. Skip this and your agent runs in-app only.
+                    </p>
+                  </div>
+                  <a
+                    href="https://app.virtuals.io/acp/new"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex shrink-0 items-center gap-1 text-xs text-primary hover:underline"
+                    data-testid="link-create-virtuals-wallet"
+                  >
+                    Provision wallet
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="virtualsWalletAddress"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs text-muted-foreground">Wallet address</FormLabel>
+                      <FormControl>
+                        <Input
+                          data-testid="input-virtuals-wallet"
+                          placeholder="0x…"
+                          spellCheck={false}
+                          autoComplete="off"
+                          className="font-mono text-xs"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="virtualsAgentId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs text-muted-foreground">Virtuals agent id <span className="font-normal">(optional)</span></FormLabel>
+                      <FormControl>
+                        <Input
+                          data-testid="input-virtuals-agent-id"
+                          placeholder="e.g. agent_abc123"
+                          spellCheck={false}
+                          autoComplete="off"
+                          className="font-mono text-xs"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}

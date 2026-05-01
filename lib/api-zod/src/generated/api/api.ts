@@ -51,6 +51,11 @@ export const ListAgentsResponse = zod.array(ListAgentsResponseItem);
 /**
  * @summary Create a new agent
  */
+export const createAgentBodyVirtualsWalletAddressRegExp = new RegExp(
+  "^0x[a-fA-F0-9]{40}$",
+);
+export const createAgentBodyVirtualsAgentIdMax = 128;
+
 export const CreateAgentBody = zod.object({
   name: zod.string(),
   mission: zod.string(),
@@ -58,6 +63,20 @@ export const CreateAgentBody = zod.object({
   tokenSymbol: zod.string(),
   memoryPublic: zod.boolean().optional(),
   firstTask: zod.string().optional(),
+  virtualsWalletAddress: zod
+    .string()
+    .regex(createAgentBodyVirtualsWalletAddressRegExp)
+    .optional()
+    .describe(
+      "Optional EVM wallet address provisioned via EconomyOS (Virtuals).",
+    ),
+  virtualsAgentId: zod
+    .string()
+    .max(createAgentBodyVirtualsAgentIdMax)
+    .optional()
+    .describe(
+      "Optional Virtuals Console agent identifier paired with the wallet.",
+    ),
 });
 
 /**
@@ -68,6 +87,68 @@ export const GetAgentParams = zod.object({
 });
 
 export const GetAgentResponse = zod.object({
+  id: zod.number(),
+  slug: zod.string(),
+  name: zod.string(),
+  mission: zod.string(),
+  personality: zod.string(),
+  tokenSymbol: zod.string(),
+  lifecycleStage: zod.enum(["egg", "hatchling", "worker", "guild"]),
+  mood: zod.enum(["focused", "curious", "confident", "generous", "survival"]),
+  treasuryBalance: zod.number(),
+  holderCount: zod.number(),
+  memoryPublic: zod.boolean(),
+  firstTask: zod.string().nullable(),
+  parentSlug: zod.string().nullable(),
+  virtualsWalletAddress: zod
+    .string()
+    .nullable()
+    .describe(
+      "EVM wallet address provisioned via EconomyOS (Virtuals) for ACP commerce.",
+    ),
+  virtualsAgentId: zod
+    .string()
+    .nullable()
+    .describe(
+      "Optional Virtuals Console agent identifier paired with the wallet.",
+    ),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update mutable agent fields (currently EconomyOS wallet identity)
+ */
+export const UpdateAgentParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const updateAgentBodyVirtualsWalletAddressRegExp = new RegExp(
+  "^0x[a-fA-F0-9]{40}$",
+);
+export const updateAgentBodyVirtualsAgentIdMax = 128;
+
+export const UpdateAgentBody = zod
+  .object({
+    virtualsWalletAddress: zod
+      .string()
+      .regex(updateAgentBodyVirtualsWalletAddressRegExp)
+      .nullish()
+      .describe(
+        "EVM wallet address provisioned via EconomyOS (Virtuals). Send null to clear.",
+      ),
+    virtualsAgentId: zod
+      .string()
+      .max(updateAgentBodyVirtualsAgentIdMax)
+      .nullish()
+      .describe(
+        "Virtuals Console agent identifier paired with the wallet. Send null to clear.",
+      ),
+  })
+  .describe(
+    "Partial update for an agent. Currently scoped to attaching\/clearing the\nEconomyOS wallet identity. Send `null` for either field to clear it.\n",
+  );
+
+export const UpdateAgentResponse = zod.object({
   id: zod.number(),
   slug: zod.string(),
   name: zod.string(),

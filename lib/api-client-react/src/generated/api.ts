@@ -33,6 +33,7 @@ import type {
   Supporter,
   TipEntry,
   TreasuryInfo,
+  UpdateAgentBody,
   VoteProposal,
 } from "./api.schemas";
 
@@ -364,6 +365,93 @@ export function useGetAgent<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Update mutable agent fields (currently EconomyOS wallet identity)
+ */
+export const getUpdateAgentUrl = (slug: string) => {
+  return `/api/agents/${slug}`;
+};
+
+export const updateAgent = async (
+  slug: string,
+  updateAgentBody: UpdateAgentBody,
+  options?: RequestInit,
+): Promise<Agent> => {
+  return customFetch<Agent>(getUpdateAgentUrl(slug), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateAgentBody),
+  });
+};
+
+export const getUpdateAgentMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAgent>>,
+    TError,
+    { slug: string; data: BodyType<UpdateAgentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAgent>>,
+  TError,
+  { slug: string; data: BodyType<UpdateAgentBody> },
+  TContext
+> => {
+  const mutationKey = ["updateAgent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAgent>>,
+    { slug: string; data: BodyType<UpdateAgentBody> }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return updateAgent(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAgentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAgent>>
+>;
+export type UpdateAgentMutationBody = BodyType<UpdateAgentBody>;
+export type UpdateAgentMutationError = ErrorType<ApiError>;
+
+/**
+ * @summary Update mutable agent fields (currently EconomyOS wallet identity)
+ */
+export const useUpdateAgent = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAgent>>,
+    TError,
+    { slug: string; data: BodyType<UpdateAgentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateAgent>>,
+  TError,
+  { slug: string; data: BodyType<UpdateAgentBody> },
+  TContext
+> => {
+  return useMutation(getUpdateAgentMutationOptions(options));
+};
 
 /**
  * @summary Get agent chat messages
