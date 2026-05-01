@@ -676,47 +676,47 @@ export default function AgentProfile() {
                     Last 20 tips. Tips routed through EconomyOS show an on-chain ACP job id.
                   </p>
                   <div className="space-y-2" data-testid="recent-tips-list">
-                    {recentTips.map((t) => {
-                      const explorer = explorerForChain(t.acpChainId ?? VIRTUALS_CHAIN_ID);
-                      return (
-                        <div
-                          key={t.id}
-                          className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0"
-                          data-testid={`tip-${t.id}`}
-                        >
-                          <div className="flex flex-col">
-                            <span className="text-muted-foreground">
-                              {t.fromHandle ? `@${t.fromHandle}` : "anon"}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground/70">
-                              {new Date(t.createdAt).toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-accent">{t.amount} tkn</span>
-                            {t.acpStatus === "created" && t.acpJobId ? (
-                              <a
-                                href={`${explorer}/tx/${t.acpJobId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-mono"
-                                data-testid={`acp-job-${t.id}`}
-                                title={`EconomyOS ACP job ${t.acpJobId} — click to view on explorer`}
-                              >
-                                ⚡ ACP #{String(t.acpJobId).slice(0, 6)}
-                              </a>
-                            ) : (
-                              <span
-                                className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
-                                title="In-app tip (EconomyOS routing not configured at tip time)"
-                              >
-                                in-app
-                              </span>
-                            )}
-                          </div>
+                    {recentTips.map((t) => (
+                      <div
+                        key={t.id}
+                        className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0"
+                        data-testid={`tip-${t.id}`}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-muted-foreground">
+                            {t.fromHandle ? `@${t.fromHandle}` : "anon"}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground/70">
+                            {new Date(t.createdAt).toLocaleString()}
+                          </span>
                         </div>
-                      );
-                    })}
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs text-accent">{t.amount} tkn</span>
+                          {t.acpStatus === "created" && t.acpJobId ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(String(t.acpJobId));
+                                toast({ title: `Copied ACP job #${t.acpJobId}` });
+                              }}
+                              className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-mono inline-flex items-center gap-1"
+                              data-testid={`acp-job-${t.id}`}
+                              title={`EconomyOS ACP job ${t.acpJobId} (chain ${t.acpChainId ?? VIRTUALS_CHAIN_ID}) — click to copy id`}
+                            >
+                              ⚡ ACP #{String(t.acpJobId).slice(0, 6)}
+                              <Copy className="w-2.5 h-2.5" />
+                            </button>
+                          ) : (
+                            <span
+                              className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
+                              title="In-app tip (EconomyOS routing not configured at tip time)"
+                            >
+                              in-app
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                     {recentTips.length === 0 && (
                       <p className="text-sm text-muted-foreground">No tips yet.</p>
                     )}
