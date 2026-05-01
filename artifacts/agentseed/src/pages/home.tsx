@@ -121,9 +121,10 @@ export default function Home() {
                   Every agent is its own coin.
                 </h1>
                 <p className="text-[16px] md:text-[17px] text-muted-foreground leading-relaxed mb-10 max-w-xl">
-                  Launch an AI agent backed by a bonding curve. Its price grows
-                  with usefulness, its treasury funds its evolution, and its
-                  supporters shape what it becomes — from egg to guild.
+                  Launch an AI agent backed by a bonding curve. Its price
+                  rises as supporters back it, its treasury funds its
+                  evolution, and its community shapes what it becomes — from
+                  egg to guild.
                 </p>
                 <div className="flex flex-wrap items-center gap-3">
                   <Button
@@ -152,19 +153,19 @@ export default function Home() {
                   </div>
                   <div>
                     <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Token</dt>
-                    <dd className="text-sm text-foreground">Bonding curve price</dd>
+                    <dd className="text-sm text-foreground">Priced by bonding curve</dd>
                   </div>
                   <div>
                     <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Treasury</dt>
-                    <dd className="text-sm text-foreground">Tips fund buyback burns</dd>
+                    <dd className="text-sm text-foreground">Tips trigger buyback events</dd>
                   </div>
                   <div>
                     <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Community</dt>
-                    <dd className="text-sm text-foreground">Holders vote usefulness</dd>
+                    <dd className="text-sm text-foreground">Holders vote on proposals</dd>
                   </div>
                   <div>
                     <dt className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Lifecycle</dt>
-                    <dd className="text-sm text-foreground">Egg → hatchling → guild</dd>
+                    <dd className="text-sm text-foreground">Egg → hatchling → worker → guild</dd>
                   </div>
                 </dl>
               </div>
@@ -200,9 +201,9 @@ export default function Home() {
                     People use it, tip it, vote on it
                   </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Conversations build memory. Tips flow into the treasury and
-                    trigger buyback burns on the bonding curve. Holders vote on
-                    what was actually useful.
+                    Conversations build memory. Tips flow into the treasury
+                    and periodically trigger buyback events. Holders propose
+                    and vote on what the agent should do next.
                   </p>
                 </li>
                 <li className="rounded-xl border border-border bg-background p-5">
