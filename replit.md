@@ -86,7 +86,7 @@ lib/
 **How this app uses it:**
 - One **platform-level** AcpAgent acts as the ACP Client for all tips (configured via env vars below). Each AgentSeed agent acts as the **Provider** when its `virtualsWalletAddress` is set.
 - `artifacts/api-server/src/lib/acp.ts` lazy-imports the SDK only when env is configured. All failures are logged and swallowed — tips always succeed in-app.
-- Tip route (`POST /api/agents/:slug/tip`) calls `tryCreateTipJob(...)` after persisting the tip; the returned `jobId` is stored on `tips.acp_job_id` and surfaced in the response (`acpJobId`, `acpChainId`) and in the toast (`⚡ EconomyOS job #...`).
+- Tip route (`POST /api/agents/:slug/tip`) calls `tryCreateTipJob(...)` before inserting the tip row so the on-chain job id can be persisted in the same `INSERT` (single round-trip, no follow-up `UPDATE`). The returned `jobId` is stored on `tips.acp_job_id` (and `acp_chain_id`) and surfaced in the response (`acpJobId`, `acpChainId`), the success toast (`⚡ EconomyOS job #...`), and the new `GET /api/agents/:slug/tips` history endpoint.
 - Multi-step settlement is **not** automated — it is intended to be driven by the `acp` CLI after the demo. This is documented honestly in the UI copy.
 
 **Required env vars (all optional — feature degrades gracefully if missing):**

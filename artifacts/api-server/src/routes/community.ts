@@ -162,9 +162,10 @@ router.post("/agents/:slug/tip", tipRateLimiter, async (req, res) => {
   const { slug } = SendTipParams.parse(req.params);
   const body = SendTipBody.parse(req.body);
 
-  // Orval doesn't carry OpenAPI's exclusiveMinimum/maximum into the generated
-  // Zod, so enforce here. Also protects the on-chain ACP escrow from
-  // griefing tips of 0 / negative / absurdly large amounts.
+  // Defense-in-depth amount bounds. Generated Zod also enforces the OpenAPI
+  // min/max, but we re-check at the route boundary to protect the on-chain
+  // ACP escrow against griefing tips of 0 / negative / absurdly large amounts
+  // even if the generated client is ever bypassed.
   if (!Number.isFinite(body.amount) || body.amount <= 0 || body.amount > 1_000_000) {
     res.status(400).json({ error: "amount must be > 0 and <= 1,000,000" });
     return;
