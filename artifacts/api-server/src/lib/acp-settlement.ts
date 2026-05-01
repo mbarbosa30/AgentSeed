@@ -8,7 +8,14 @@ import {
 } from "./acp";
 import { logger } from "./logger";
 
-const POLL_INTERVAL_MS = Number(process.env.VIRTUALS_SETTLEMENT_POLL_MS ?? 15_000);
+// Clamp the poll interval so a misconfigured `VIRTUALS_SETTLEMENT_POLL_MS`
+// (e.g. `0`, negative, or NaN) cannot turn the worker into a hot loop that
+// pummels the DB and the on-chain RPC. Floor at 1 s, ceiling at 5 min.
+const RAW_POLL = Number(process.env.VIRTUALS_SETTLEMENT_POLL_MS ?? 15_000);
+const POLL_INTERVAL_MS =
+  Number.isFinite(RAW_POLL) && RAW_POLL >= 1_000
+    ? Math.min(RAW_POLL, 5 * 60_000)
+    : 15_000;
 const TERMINAL_STATUSES: AcpJobStatus[] = [
   "completed",
   "rejected",

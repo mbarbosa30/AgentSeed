@@ -600,6 +600,30 @@ components:
         acpChainId:
           type: ["integer", "null"]
           description: Chain id (e.g. 84532 for Base Sepolia) for the ACP job above.
+        acpStatus:
+          type: string
+          enum:
+            - none
+            - created
+            - budget_set
+            - funded
+            - submitted
+            - completed
+            - rejected
+            - expired
+            - failed
+          description: |
+            Initial ACP lifecycle status persisted with this tip. `none` when
+            no on-chain hop happened. `created` when only the job id was
+            minted (autosettlement off). The `GET /agents/:slug/tips`
+            endpoint reflects subsequent state machine transitions.
+        acpAutosettleEnabled:
+          type: boolean
+          description: |
+            True when the server is configured to walk the ACP job through
+            multi-step settlement (`VIRTUALS_AUTOSETTLE_ENABLED=true` plus
+            valid platform + provider creds). Lets the client surface the
+            right messaging in the success toast.
       required:
         - treasuryBalance
         - holderCount
@@ -607,6 +631,8 @@ components:
         - burnEvents
         - isBuybackTip
         - lifecycleStage
+        - acpStatus
+        - acpAutosettleEnabled
         - lifecycleAdvanced
         - acpJobId
         - acpChainId

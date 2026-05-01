@@ -197,7 +197,12 @@ export default function AgentProfile() {
         const extras: string[] = [];
         if (data.isBuybackTip) extras.push("🔥 Buyback burn triggered");
         if (data.lifecycleAdvanced) extras.push(`🌱 Evolved to ${data.lifecycleStage}`);
-        if (data.acpJobId) extras.push(`⚡ EconomyOS job #${data.acpJobId}`);
+        if (data.acpJobId) {
+          const settleNote = data.acpAutosettleEnabled
+            ? "settling on-chain…"
+            : "manual settlement";
+          extras.push(`⚡ EconomyOS job #${data.acpJobId} (${settleNote})`);
+        }
         toast({
           title: `Tip sent! Treasury: ${data.treasuryBalance.toFixed(2)}`,
           description: extras.length > 0

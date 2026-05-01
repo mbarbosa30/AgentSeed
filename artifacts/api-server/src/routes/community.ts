@@ -13,7 +13,7 @@ import {
   GetAgentStatsParams,
 } from "@workspace/api-zod";
 import { progressLifecycle } from "../lib/lifecycle";
-import { tryCreateTipJob } from "../lib/acp";
+import { isAutosettleEnabled, tryCreateTipJob } from "../lib/acp";
 import { kickSettlement } from "../lib/acp-settlement";
 import { logger } from "../lib/logger";
 import { rateLimit } from "../lib/rate-limit";
@@ -273,6 +273,8 @@ router.post("/agents/:slug/tip", tipRateLimiter, async (req, res) => {
     lifecycleAdvanced: progression.advanced,
     acpJobId: acpResult?.jobId ?? null,
     acpChainId: acpResult?.chainId ?? null,
+    acpStatus: acpResult ? "created" : "none",
+    acpAutosettleEnabled: isAutosettleEnabled(),
   });
 });
 

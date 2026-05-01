@@ -212,6 +212,26 @@ export const SendTipResponse = zod.object({
     .number()
     .nullable()
     .describe("Chain id (e.g. 84532 for Base Sepolia) for the ACP job above."),
+  acpStatus: zod
+    .enum([
+      "none",
+      "created",
+      "budget_set",
+      "funded",
+      "submitted",
+      "completed",
+      "rejected",
+      "expired",
+      "failed",
+    ])
+    .describe(
+      "Initial ACP lifecycle status persisted with this tip. `none` when\nno on-chain hop happened. `created` when only the job id was\nminted (autosettlement off). The `GET \/agents\/:slug\/tips`\nendpoint reflects subsequent state machine transitions.\n",
+    ),
+  acpAutosettleEnabled: zod
+    .boolean()
+    .describe(
+      "True when the server is configured to walk the ACP job through\nmulti-step settlement (`VIRTUALS_AUTOSETTLE_ENABLED=true` plus\nvalid platform + provider creds). Lets the client surface the\nright messaging in the success toast.\n",
+    ),
 });
 
 /**

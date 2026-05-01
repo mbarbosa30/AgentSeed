@@ -128,6 +128,28 @@ export const TreasuryInfoLifecycleStage = {
   guild: "guild",
 } as const;
 
+/**
+ * Initial ACP lifecycle status persisted with this tip. `none` when
+no on-chain hop happened. `created` when only the job id was
+minted (autosettlement off). The `GET /agents/:slug/tips`
+endpoint reflects subsequent state machine transitions.
+
+ */
+export type TreasuryInfoAcpStatus =
+  (typeof TreasuryInfoAcpStatus)[keyof typeof TreasuryInfoAcpStatus];
+
+export const TreasuryInfoAcpStatus = {
+  none: "none",
+  created: "created",
+  budget_set: "budget_set",
+  funded: "funded",
+  submitted: "submitted",
+  completed: "completed",
+  rejected: "rejected",
+  expired: "expired",
+  failed: "failed",
+} as const;
+
 export interface TreasuryInfo {
   treasuryBalance: number;
   holderCount: number;
@@ -146,6 +168,18 @@ export interface TreasuryInfo {
    * @nullable
    */
   acpChainId: number | null;
+  /** Initial ACP lifecycle status persisted with this tip. `none` when
+no on-chain hop happened. `created` when only the job id was
+minted (autosettlement off). The `GET /agents/:slug/tips`
+endpoint reflects subsequent state machine transitions.
+ */
+  acpStatus: TreasuryInfoAcpStatus;
+  /** True when the server is configured to walk the ACP job through
+multi-step settlement (`VIRTUALS_AUTOSETTLE_ENABLED=true` plus
+valid platform + provider creds). Lets the client surface the
+right messaging in the success toast.
+ */
+  acpAutosettleEnabled: boolean;
 }
 
 export interface AddSupporterBody {
