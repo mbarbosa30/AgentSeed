@@ -55,6 +55,18 @@ export interface Agent {
    * @nullable
    */
   virtualsAgentId: string | null;
+  /** When true, the chat pipeline exposes the Viator activity-search
+tool to the model and the UI renders activity cards inline plus
+a "Travel concierge" badge on the profile.
+ */
+  isTravelConcierge: boolean;
+  /**
+   * Viator affiliate / partner id appended to outbound product
+URLs as `?pid=` so the agent owner gets attribution credit.
+
+   * @nullable
+   */
+  viatorPartnerId: string | null;
   createdAt: string;
 }
 
@@ -75,6 +87,17 @@ export interface CreateAgentBody {
    * @maxLength 128
    */
   virtualsAgentId?: string;
+  /** When true, mark this agent as a travel concierge — exposes the
+Viator activity-search tool in chat and shows the badge in UI.
+ */
+  isTravelConcierge?: boolean;
+  /**
+   * Viator affiliate / partner id. Required to actually earn
+commission attribution; ignored unless `isTravelConcierge`.
+
+   * @maxLength 64
+   */
+  viatorPartnerId?: string;
 }
 
 /**
@@ -95,6 +118,14 @@ export interface UpdateAgentBody {
    * @nullable
    */
   virtualsAgentId?: string | null;
+  /** Toggle the travel-concierge capability on/off. */
+  isTravelConcierge?: boolean;
+  /**
+   * Viator affiliate / partner id. Send null to clear.
+   * @maxLength 64
+   * @nullable
+   */
+  viatorPartnerId?: string | null;
 }
 
 export type AgentMessageRole =
@@ -371,6 +402,36 @@ export interface ForkAgentBody {
   mission: string;
   tokenSymbol: string;
   specialization: string;
+}
+
+export interface AffiliateClick {
+  id: number;
+  productCode: string;
+  /** @nullable */
+  productTitle: string | null;
+  /** @nullable */
+  price: number | null;
+  /** @nullable */
+  currency: string | null;
+  createdAt: string;
+}
+
+export interface AgentTravelStats {
+  isTravelConcierge: boolean;
+  hasPartnerId: boolean;
+  /** Coarse proxy: each click-out implies at least one surfaced
+activity. Until impressions are tracked separately this
+equals `clickOuts`.
+ */
+  activitiesSurfaced: number;
+  /** Total qualified click-outs to Viator product pages. */
+  clickOuts: number;
+  /** Locally-estimated commission across all clicks. Real
+commission only confirms via Viator monthly reporting.
+ */
+  estCommission: number;
+  currency: string;
+  recent: AffiliateClick[];
 }
 
 export interface ApiError {

@@ -20,3 +20,4 @@
 export * from "./agents";
 export * from "./messages";
 export * from "./conversations";
+export * from "./affiliate";

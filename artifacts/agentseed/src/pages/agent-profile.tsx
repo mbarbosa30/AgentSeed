@@ -26,6 +26,7 @@ import {
   useGetAgentVotes,
   useGetAgentSupporters,
   useGetAgentTips,
+  useGetAgentTravelStats,
   useSubmitVote,
   useSendTip,
   useAddSupporter,
@@ -168,6 +169,14 @@ export default function AgentProfile() {
     query: {
       queryKey: getGetAgentVotesQueryKey(slug),
       enabled: !!slug,
+    },
+  });
+
+  const { data: travelStats } = useGetAgentTravelStats(slug, {
+    query: {
+      queryKey: ["travelStats", slug],
+      enabled: !!slug && !!agent?.isTravelConcierge,
+      refetchInterval: 15_000,
     },
   });
 
@@ -518,6 +527,70 @@ export default function AgentProfile() {
           </div>
 
           <TabsContent value="chat">
+            {agent.isTravelConcierge && (
+              <Card className="mb-3 p-4 bg-gradient-to-br from-sky-50 to-white border-sky-100">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🌍</span>
+                    <div>
+                      <p className="text-sm font-medium">Travel concierge</p>
+                      <p className="text-xs text-muted-foreground">
+                        Books real Viator activities
+                        {agent.viatorPartnerId
+                          ? " — commission tracked"
+                          : " — partner id not set, no commission"}
+                      </p>
+                    </div>
+                  </div>
+                  {travelStats && travelStats.clickOuts > 0 && (
+                    <div className="flex items-center gap-4 text-xs font-mono" data-testid="travel-stats-strip">
+                      <span>
+                        <span className="text-foreground font-semibold">{travelStats.clickOuts}</span>
+                        <span className="ml-1 text-muted-foreground">click-outs</span>
+                      </span>
+                      <span>
+                        <span className="text-foreground font-semibold">
+                          {travelStats.estCommission.toFixed(2)} {travelStats.currency}
+                        </span>
+                        <span className="ml-1 text-muted-foreground">est. commission</span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {localMessages.length === 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2" data-testid="travel-starter-prompts">
+                    {[
+                      "Plan a 2-day food tour in Lisbon under €100/person",
+                      "Family-friendly things to do in Barcelona",
+                      "Best sunset experience in Tokyo this weekend",
+                    ].map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => {
+                          const input = document.querySelector<HTMLInputElement>(
+                            '[data-testid="input-chat"]',
+                          );
+                          if (input) {
+                            const setter = Object.getOwnPropertyDescriptor(
+                              window.HTMLInputElement.prototype,
+                              "value",
+                            )?.set;
+                            setter?.call(input, p);
+                            input.dispatchEvent(new Event("input", { bubbles: true }));
+                            input.focus();
+                          }
+                        }}
+                        className="rounded-full border border-sky-200 bg-white px-3 py-1 text-xs text-sky-700 hover:border-sky-400 hover:bg-sky-50"
+                        data-testid={`starter-prompt-${p.slice(0, 12).replace(/\W+/g, "-")}`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            )}
             <Card className="h-[70vh] min-h-[420px] max-h-[640px] flex flex-col overflow-hidden">
               <ChatInterface
                 slug={slug}

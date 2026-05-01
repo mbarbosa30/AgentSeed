@@ -33,6 +33,14 @@ function normalizeAgentId(input: string | null | undefined): string | null | und
   return trimmed === "" ? null : trimmed;
 }
 
+function normalizePartnerId(input: string | null | undefined): string | null | undefined {
+  if (input === undefined) return undefined;
+  if (input === null) return null;
+  const trimmed = input.trim();
+  if (trimmed === "") return null;
+  return trimmed.slice(0, 64);
+}
+
 router.get("/agents", async (_req, res) => {
   const agents = await db
     .select()
@@ -73,6 +81,10 @@ router.post("/agents", async (req, res) => {
 
   const walletAddress = normalizeWalletAddress(body.virtualsWalletAddress) ?? null;
   const virtualsAgentId = normalizeAgentId(body.virtualsAgentId) ?? null;
+  const isTravelConcierge = body.isTravelConcierge === true;
+  const viatorPartnerId = isTravelConcierge
+    ? normalizePartnerId(body.viatorPartnerId) ?? null
+    : null;
 
   const [agent] = await db
     .insert(agentsTable)
@@ -91,6 +103,8 @@ router.post("/agents", async (req, res) => {
       parentSlug: null,
       virtualsWalletAddress: walletAddress,
       virtualsAgentId: virtualsAgentId,
+      isTravelConcierge,
+      viatorPartnerId,
     })
     .returning();
 
@@ -158,6 +172,12 @@ router.patch("/agents/:slug", async (req, res) => {
   }
   if (Object.prototype.hasOwnProperty.call(body, "virtualsAgentId")) {
     updates.virtualsAgentId = normalizeAgentId(body.virtualsAgentId) ?? null;
+  }
+  if (Object.prototype.hasOwnProperty.call(body, "isTravelConcierge")) {
+    updates.isTravelConcierge = body.isTravelConcierge === true;
+  }
+  if (Object.prototype.hasOwnProperty.call(body, "viatorPartnerId")) {
+    updates.viatorPartnerId = normalizePartnerId(body.viatorPartnerId) ?? null;
   }
 
   if (Object.keys(updates).length === 0) {

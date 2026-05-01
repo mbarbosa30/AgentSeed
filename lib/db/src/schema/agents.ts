@@ -19,6 +19,14 @@ export const agentsTable = pgTable("agents", {
   memoryHighlights: text("memory_highlights").array().notNull().default([]),
   virtualsWalletAddress: text("virtuals_wallet_address"),
   virtualsAgentId: text("virtuals_agent_id"),
+  // Travel-concierge feature: when true, the chat pipeline exposes the
+  // Viator searchActivities tool to Gemini and the UI renders activity
+  // cards + a "Travel concierge" badge on the agent profile.
+  isTravelConcierge: boolean("is_travel_concierge").notNull().default(false),
+  // Viator affiliate / partner identifier appended to outbound product
+  // URLs as `?pid=` (or merged with the configured campaign id) so that
+  // the agent owner gets attribution credit for the click-out.
+  viatorPartnerId: text("viator_partner_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

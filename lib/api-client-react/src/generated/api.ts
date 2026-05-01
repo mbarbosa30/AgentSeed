@@ -21,6 +21,7 @@ import type {
   Agent,
   AgentMessage,
   AgentStats,
+  AgentTravelStats,
   ApiError,
   CreateAgentBody,
   CreateProposalBody,
@@ -856,6 +857,99 @@ export const usePostHeartbeat = <
 > => {
   return useMutation(getPostHeartbeatMutationOptions(options));
 };
+
+/**
+ * Returns lifetime totals for a travel-concierge agent (activities
+surfaced, click-outs, est. commission) plus the 10 most recent
+Viator click-outs. For non-travel agents returns zeroed stats with
+`isTravelConcierge=false`.
+
+ * @summary Travel-concierge stats for an agent
+ */
+export const getGetAgentTravelStatsUrl = (slug: string) => {
+  return `/api/agents/${slug}/travel-stats`;
+};
+
+export const getAgentTravelStats = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<AgentTravelStats> => {
+  return customFetch<AgentTravelStats>(getGetAgentTravelStatsUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAgentTravelStatsQueryKey = (slug: string) => {
+  return [`/api/agents/${slug}/travel-stats`] as const;
+};
+
+export const getGetAgentTravelStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAgentTravelStats>>,
+  TError = ErrorType<ApiError>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAgentTravelStats>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetAgentTravelStatsQueryKey(slug);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAgentTravelStats>>
+  > = ({ signal }) => getAgentTravelStats(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAgentTravelStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAgentTravelStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAgentTravelStats>>
+>;
+export type GetAgentTravelStatsQueryError = ErrorType<ApiError>;
+
+/**
+ * @summary Travel-concierge stats for an agent
+ */
+
+export function useGetAgentTravelStats<
+  TData = Awaited<ReturnType<typeof getAgentTravelStats>>,
+  TError = ErrorType<ApiError>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAgentTravelStats>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAgentTravelStatsQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get current vote proposals for agent

@@ -61,6 +61,8 @@ const createAgentSchema = z.object({
       "Must be a valid 0x… EVM address (42 chars)",
     ),
   virtualsAgentId: z.string().trim().max(128).optional(),
+  isTravelConcierge: z.boolean().default(false),
+  viatorPartnerId: z.string().trim().max(64).optional(),
 });
 
 type CreateAgentForm = z.infer<typeof createAgentSchema>;
@@ -99,12 +101,17 @@ export default function Home() {
       memoryPublic: true,
       virtualsWalletAddress: "",
       virtualsAgentId: "",
+      isTravelConcierge: false,
+      viatorPartnerId: "",
     },
   });
 
   const onSubmit = (data: CreateAgentForm) => {
     const wallet = data.virtualsWalletAddress?.trim() || undefined;
     const agentId = data.virtualsAgentId?.trim() || undefined;
+    const partnerId = data.isTravelConcierge
+      ? data.viatorPartnerId?.trim() || undefined
+      : undefined;
     createAgent.mutate({
       data: {
         name: data.name,
@@ -115,6 +122,8 @@ export default function Home() {
         memoryPublic: data.memoryPublic,
         virtualsWalletAddress: wallet,
         virtualsAgentId: agentId,
+        isTravelConcierge: data.isTravelConcierge,
+        viatorPartnerId: partnerId,
       },
     });
   };
@@ -425,6 +434,67 @@ export default function Home() {
                     </FormItem>
                   )}
                 />
+              </div>
+
+              <div className="rounded-lg border border-border bg-card/40 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🌍</span>
+                    <div>
+                      <p className="font-medium text-sm">Travel concierge mode</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Lets this agent search & book real Viator activities in chat
+                      </p>
+                    </div>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="isTravelConcierge"
+                    render={({ field }) => (
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={field.value}
+                        aria-label="Travel concierge"
+                        data-testid="toggle-travel-concierge"
+                        onClick={() => field.onChange(!field.value)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none ${
+                          field.value ? "bg-primary" : "bg-muted"
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            field.value ? "translate-x-6" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                    )}
+                  />
+                </div>
+                {form.watch("isTravelConcierge") && (
+                  <FormField
+                    control={form.control}
+                    name="viatorPartnerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs text-muted-foreground">
+                          Viator partner id <span className="font-normal">(optional — needed for commission attribution)</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            data-testid="input-viator-partner-id"
+                            placeholder="e.g. P00123456"
+                            spellCheck={false}
+                            autoComplete="off"
+                            className="font-mono text-xs"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
 
               <FormField

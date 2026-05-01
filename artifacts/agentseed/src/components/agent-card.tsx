@@ -25,7 +25,18 @@ export function AgentCard({ agent }: AgentCardProps) {
               ${agent.tokenSymbol}
             </span>
           </div>
-          <LifecycleBadge stage={agent.lifecycleStage} />
+          <div className="flex items-center gap-1.5 shrink-0">
+            {agent.isTravelConcierge && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700"
+                title="Travel concierge — books real Viator activities"
+                data-testid={`badge-travel-${agent.id}`}
+              >
+                🌍 Travel
+              </span>
+            )}
+            <LifecycleBadge stage={agent.lifecycleStage} />
+          </div>
         </div>
 
         <p

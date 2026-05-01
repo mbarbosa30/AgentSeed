@@ -16,6 +16,8 @@ tags:
     description: Agent chat (AI-powered)
   - name: community
     description: Votes, tips, supporters
+  - name: travel
+    description: Travel-concierge stats and Viator affiliate click attribution
 paths:
   /healthz:
     get:
@@ -297,6 +299,36 @@ paths:
                 $ref: "#/components/schemas/ApiError"
         "503":
           description: Heartbeat disabled (HEARTBEAT_SHARED_SECRET unset on server)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /agents/{slug}/travel-stats:
+    get:
+      operationId: getAgentTravelStats
+      tags: [travel]
+      summary: Travel-concierge stats for an agent
+      description: |
+        Returns lifetime totals for a travel-concierge agent (activities
+        surfaced, click-outs, est. commission) plus the 10 most recent
+        Viator click-outs. For non-travel agents returns zeroed stats with
+        `isTravelConcierge=false`.
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Travel stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentTravelStats"
+        "404":
+          description: Agent not found
           content:
             application/json:
               schema:
@@ -596,6 +628,18 @@ components:
         virtualsAgentId:
           type: ["string", "null"]
           description: Optional Virtuals Console agent identifier paired with the wallet.
+        isTravelConcierge:
+          type: boolean
+          default: false
+          description: |
+            When true, the chat pipeline exposes the Viator activity-search
+            tool to the model and the UI renders activity cards inline plus
+            a "Travel concierge" badge on the profile.
+        viatorPartnerId:
+          type: ["string", "null"]
+          description: |
+            Viator affiliate / partner id appended to outbound product
+            URLs as `?pid=` so the agent owner gets attribution credit.
         createdAt:
           type: string
           format: date-time
@@ -615,6 +659,8 @@ components:
         - parentSlug
         - virtualsWalletAddress
         - virtualsAgentId
+        - isTravelConcierge
+        - viatorPartnerId
         - createdAt
 
     CreateAgentBody:
@@ -640,6 +686,17 @@ components:
           type: string
           maxLength: 128
           description: Optional Virtuals Console agent identifier paired with the wallet.
+        isTravelConcierge:
+          type: boolean
+          description: |
+            When true, mark this agent as a travel concierge — exposes the
+            Viator activity-search tool in chat and shows the badge in UI.
+        viatorPartnerId:
+          type: string
+          maxLength: 64
+          description: |
+            Viator affiliate / partner id. Required to actually earn
+            commission attribution; ignored unless `isTravelConcierge`.
       required:
         - name
         - mission
@@ -660,6 +717,13 @@ components:
           type: ["string", "null"]
           maxLength: 128
           description: Virtuals Console agent identifier paired with the wallet. Send null to clear.
+        isTravelConcierge:
+          type: boolean
+          description: Toggle the travel-concierge capability on/off.
+        viatorPartnerId:
+          type: ["string", "null"]
+          maxLength: 64
+          description: Viator affiliate / partner id. Send null to clear.
 
     AgentMessage:
       type: object
@@ -1055,6 +1119,66 @@ components:
         - mission
         - tokenSymbol
         - specialization
+
+    AgentTravelStats:
+      type: object
+      properties:
+        isTravelConcierge:
+          type: boolean
+        hasPartnerId:
+          type: boolean
+        activitiesSurfaced:
+          type: integer
+          description: |
+            Coarse proxy: each click-out implies at least one surfaced
+            activity. Until impressions are tracked separately this
+            equals `clickOuts`.
+        clickOuts:
+          type: integer
+          description: Total qualified click-outs to Viator product pages.
+        estCommission:
+          type: number
+          description: |
+            Locally-estimated commission across all clicks. Real
+            commission only confirms via Viator monthly reporting.
+        currency:
+          type: string
+        recent:
+          type: array
+          items:
+            $ref: "#/components/schemas/AffiliateClick"
+      required:
+        - isTravelConcierge
+        - hasPartnerId
+        - activitiesSurfaced
+        - clickOuts
+        - estCommission
+        - currency
+        - recent
+
+    AffiliateClick:
+      type: object
+      properties:
+        id:
+          type: integer
+        productCode:
+          type: string
+        productTitle:
+          type: ["string", "null"]
+        price:
+          type: ["number", "null"]
+        currency:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - productCode
+        - productTitle
+        - price
+        - currency
+        - createdAt
 
     ApiError:
       type: object

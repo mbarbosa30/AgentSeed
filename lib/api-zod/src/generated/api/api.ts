@@ -18,6 +18,8 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary List all agents
  */
+export const listAgentsResponseIsTravelConciergeDefault = false;
+
 export const ListAgentsResponseItem = zod.object({
   id: zod.number(),
   slug: zod.string(),
@@ -44,6 +46,18 @@ export const ListAgentsResponseItem = zod.object({
     .describe(
       "Optional Virtuals Console agent identifier paired with the wallet.",
     ),
+  isTravelConcierge: zod
+    .boolean()
+    .default(listAgentsResponseIsTravelConciergeDefault)
+    .describe(
+      'When true, the chat pipeline exposes the Viator activity-search\ntool to the model and the UI renders activity cards inline plus\na \"Travel concierge\" badge on the profile.\n',
+    ),
+  viatorPartnerId: zod
+    .string()
+    .nullable()
+    .describe(
+      "Viator affiliate \/ partner id appended to outbound product\nURLs as `?pid=` so the agent owner gets attribution credit.\n",
+    ),
   createdAt: zod.coerce.date(),
 });
 export const ListAgentsResponse = zod.array(ListAgentsResponseItem);
@@ -55,6 +69,8 @@ export const createAgentBodyVirtualsWalletAddressRegExp = new RegExp(
   "^0x[a-fA-F0-9]{40}$",
 );
 export const createAgentBodyVirtualsAgentIdMax = 128;
+
+export const createAgentBodyViatorPartnerIdMax = 64;
 
 export const CreateAgentBody = zod.object({
   name: zod.string(),
@@ -77,6 +93,19 @@ export const CreateAgentBody = zod.object({
     .describe(
       "Optional Virtuals Console agent identifier paired with the wallet.",
     ),
+  isTravelConcierge: zod
+    .boolean()
+    .optional()
+    .describe(
+      "When true, mark this agent as a travel concierge — exposes the\nViator activity-search tool in chat and shows the badge in UI.\n",
+    ),
+  viatorPartnerId: zod
+    .string()
+    .max(createAgentBodyViatorPartnerIdMax)
+    .optional()
+    .describe(
+      "Viator affiliate \/ partner id. Required to actually earn\ncommission attribution; ignored unless `isTravelConcierge`.\n",
+    ),
 });
 
 /**
@@ -85,6 +114,8 @@ export const CreateAgentBody = zod.object({
 export const GetAgentParams = zod.object({
   slug: zod.coerce.string(),
 });
+
+export const getAgentResponseIsTravelConciergeDefault = false;
 
 export const GetAgentResponse = zod.object({
   id: zod.number(),
@@ -112,6 +143,18 @@ export const GetAgentResponse = zod.object({
     .describe(
       "Optional Virtuals Console agent identifier paired with the wallet.",
     ),
+  isTravelConcierge: zod
+    .boolean()
+    .default(getAgentResponseIsTravelConciergeDefault)
+    .describe(
+      'When true, the chat pipeline exposes the Viator activity-search\ntool to the model and the UI renders activity cards inline plus\na \"Travel concierge\" badge on the profile.\n',
+    ),
+  viatorPartnerId: zod
+    .string()
+    .nullable()
+    .describe(
+      "Viator affiliate \/ partner id appended to outbound product\nURLs as `?pid=` so the agent owner gets attribution credit.\n",
+    ),
   createdAt: zod.coerce.date(),
 });
 
@@ -126,6 +169,8 @@ export const updateAgentBodyVirtualsWalletAddressRegExp = new RegExp(
   "^0x[a-fA-F0-9]{40}$",
 );
 export const updateAgentBodyVirtualsAgentIdMax = 128;
+
+export const updateAgentBodyViatorPartnerIdMax = 64;
 
 export const UpdateAgentBody = zod
   .object({
@@ -143,10 +188,21 @@ export const UpdateAgentBody = zod
       .describe(
         "Virtuals Console agent identifier paired with the wallet. Send null to clear.",
       ),
+    isTravelConcierge: zod
+      .boolean()
+      .optional()
+      .describe("Toggle the travel-concierge capability on\/off."),
+    viatorPartnerId: zod
+      .string()
+      .max(updateAgentBodyViatorPartnerIdMax)
+      .nullish()
+      .describe("Viator affiliate \/ partner id. Send null to clear."),
   })
   .describe(
     "Partial update for an agent. Currently scoped to attaching\/clearing the\nEconomyOS wallet identity. Send `null` for either field to clear it.\n",
   );
+
+export const updateAgentResponseIsTravelConciergeDefault = false;
 
 export const UpdateAgentResponse = zod.object({
   id: zod.number(),
@@ -173,6 +229,18 @@ export const UpdateAgentResponse = zod.object({
     .nullable()
     .describe(
       "Optional Virtuals Console agent identifier paired with the wallet.",
+    ),
+  isTravelConcierge: zod
+    .boolean()
+    .default(updateAgentResponseIsTravelConciergeDefault)
+    .describe(
+      'When true, the chat pipeline exposes the Viator activity-search\ntool to the model and the UI renders activity cards inline plus\na \"Travel concierge\" badge on the profile.\n',
+    ),
+  viatorPartnerId: zod
+    .string()
+    .nullable()
+    .describe(
+      "Viator affiliate \/ partner id appended to outbound product\nURLs as `?pid=` so the agent owner gets attribution credit.\n",
     ),
   createdAt: zod.coerce.date(),
 });
@@ -281,6 +349,47 @@ export const postHeartbeatBodyThoughtMax = 1000;
 
 export const PostHeartbeatBody = zod.object({
   thought: zod.string().min(1).max(postHeartbeatBodyThoughtMax),
+});
+
+/**
+ * Returns lifetime totals for a travel-concierge agent (activities
+surfaced, click-outs, est. commission) plus the 10 most recent
+Viator click-outs. For non-travel agents returns zeroed stats with
+`isTravelConcierge=false`.
+
+ * @summary Travel-concierge stats for an agent
+ */
+export const GetAgentTravelStatsParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const GetAgentTravelStatsResponse = zod.object({
+  isTravelConcierge: zod.boolean(),
+  hasPartnerId: zod.boolean(),
+  activitiesSurfaced: zod
+    .number()
+    .describe(
+      "Coarse proxy: each click-out implies at least one surfaced\nactivity. Until impressions are tracked separately this\nequals `clickOuts`.\n",
+    ),
+  clickOuts: zod
+    .number()
+    .describe("Total qualified click-outs to Viator product pages."),
+  estCommission: zod
+    .number()
+    .describe(
+      "Locally-estimated commission across all clicks. Real\ncommission only confirms via Viator monthly reporting.\n",
+    ),
+  currency: zod.string(),
+  recent: zod.array(
+    zod.object({
+      id: zod.number(),
+      productCode: zod.string(),
+      productTitle: zod.string().nullable(),
+      price: zod.number().nullable(),
+      currency: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
 });
 
 /**

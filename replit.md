@@ -141,3 +141,31 @@ lib/
 - `PATCH /api/agents/:slug` accepts a partial `UpdateAgentBody` (`virtualsWalletAddress`, `virtualsAgentId`; `null` clears) and is wired to a "Wallet pending → Attach wallet" CTA on the agent profile, plus an "Edit" affordance once a wallet is attached.
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+
+## Travel Concierge (Wanderbird) — Tripadvisor/Viator bounty
+
+Adds a per-agent capability that turns any agent into a real, commerce-capable
+travel concierge.
+
+**Schema additions:**
+- `agents.is_travel_concierge` (boolean, default false), `agents.viator_partner_id` (text, nullable)
+- New `affiliate_clicks` table — id, agent_id, product_code, product_title, price, currency, ip_hash, ua_hash, partner_id, created_at — written on every `/api/affiliate/click/...` hit.
+
+**Server flow:**
+- `lib/viator.ts` — calls Viator Partner API `/products/search` (live mode when `VIATOR_API_KEY` is set, otherwise an 8-activity demo dataset clearly labeled `mode: "demo"` and a one-shot warn log).
+- `lib/travel-tools.ts` — exposes the `searchViatorActivities` Gemini function-call. Returns `ToolResultPayload` with pre-built `bookUrl` per activity.
+- `routes/messages.ts` — when `agent.isTravelConcierge` is true the chat route attaches the tool, runs a multi-round (max 4) tool-call loop, and streams new `data: { type: "tool_result", payload }` SSE events alongside the usual `chunk` text events.
+- `routes/affiliate.ts` — `GET /api/affiliate/click/:slug/:productCode` is rate-limited, allow-lists hosts via `AFFILIATE_REDIRECT_ALLOWLIST` (default `viator.com,tripadvisor.com`), logs the click, credits the agent treasury (+0.5/click), advances lifecycle (clicks weighted 2 in `GrowthCounts`), and 302s to the partner-id-stamped URL. `GET /api/agents/:slug/travel-stats` returns lifetime click-outs + est. commission.
+
+**UI:**
+- Home create form has a "Travel concierge mode" toggle that reveals an optional Viator partner-id input.
+- Agent card shows a 🌍 Travel pill when the flag is on.
+- Agent profile chat tab shows a strip with click-out + commission counters and starter prompts when chat is empty.
+- `chat-interface.tsx` consumes the new `tool_result` SSE event and renders activity cards (image, rating, duration, price, "Book on Viator" with `rel="sponsored"`).
+
+**Seeded demo agent:** `wanderbird` ($WANDR), worker stage, travel concierge on. Partner id pulled from `WANDERBIRD_VIATOR_PARTNER_ID` env (optional).
+
+**Required/optional env:**
+- `VIATOR_API_KEY` — enables live Viator search; otherwise demo mode.
+- `WANDERBIRD_VIATOR_PARTNER_ID` — partner id pinned on the seed agent.
+- `AFFILIATE_REDIRECT_ALLOWLIST` — host allowlist for the 302 redirect.

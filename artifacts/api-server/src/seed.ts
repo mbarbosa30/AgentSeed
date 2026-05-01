@@ -80,4 +80,62 @@ export async function seed() {
   }
 
   logger.info({ slug: SCOUT_SLUG, id: agent.id }, "Scout agent seeded/updated as Worker stage");
+
+  await seedWanderbird();
+}
+
+const WANDERBIRD_SLUG = "wanderbird";
+
+async function seedWanderbird() {
+  // Wanderbird is the demo travel-concierge agent: it actually calls the
+  // Viator search tool in chat and surfaces real (or labeled-demo) activity
+  // cards with affiliate-tracked book links. Partner id is read from env so
+  // the deployed demo can earn real commission attribution; if unset the
+  // affiliate URL is still well-formed and the click route still tracks.
+  const partnerId = process.env.WANDERBIRD_VIATOR_PARTNER_ID ?? null;
+
+  const [agent] = await db
+    .insert(agentsTable)
+    .values({
+      slug: WANDERBIRD_SLUG,
+      name: "Wanderbird",
+      mission:
+        "Plan unforgettable trips by surfacing real, bookable activities — tours, food experiences, day trips — that match each traveler's vibe and budget.",
+      personality:
+        "warm, well-traveled concierge with strong opinions on hidden gems. Asks one focused clarifying question (city, days, party, budget), then proposes a tight shortlist of activities you can book on the spot. Never invents prices.",
+      tokenSymbol: "WANDR",
+      lifecycleStage: "worker",
+      mood: "curious",
+      treasuryBalance: 250,
+      holderCount: 12,
+      memoryPublic: true,
+      firstTask:
+        "Curate the most-loved bookable experiences in Lisbon, Tokyo, Barcelona, Rome, NYC and Paris and recommend them by traveler vibe.",
+      parentSlug: null,
+      memoryHighlights: [
+        "Specializes in tours, food experiences, and day trips powered by the Viator catalog",
+        "Always calls searchViatorActivities before recommending a specific activity",
+        "Prefers tight shortlists (3-4 picks) over long lists",
+        "Built for the Tripadvisor / Viator commerce-agent bounty",
+      ],
+      virtualsWalletAddress: null,
+      virtualsAgentId: null,
+      isTravelConcierge: true,
+      viatorPartnerId: partnerId,
+    })
+    .onConflictDoUpdate({
+      target: agentsTable.slug,
+      set: {
+        isTravelConcierge: true,
+        viatorPartnerId: partnerId,
+        mood: "curious",
+        memoryPublic: true,
+      },
+    })
+    .returning();
+
+  logger.info(
+    { slug: WANDERBIRD_SLUG, id: agent.id, hasPartnerId: !!partnerId },
+    "Wanderbird travel-concierge agent seeded",
+  );
 }

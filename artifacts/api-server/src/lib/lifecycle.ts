@@ -19,10 +19,17 @@ export interface GrowthCounts {
   messageCount: number;
   holderCount: number;
   tipCount: number;
+  /**
+   * Optional: qualified Viator click-outs from a travel-concierge agent.
+   * Each click is worth less than a tip on purpose so a click farm can't
+   * out-earn real supporters; default weight is 2 per click.
+   */
+  clickCount?: number;
 }
 
 export function computeGrowthScore(counts: GrowthCounts): number {
-  return counts.messageCount + counts.holderCount * 10 + counts.tipCount * 5;
+  const clicks = counts.clickCount ?? 0;
+  return counts.messageCount + counts.holderCount * 10 + counts.tipCount * 5 + clicks * 2;
 }
 
 export function computeLifecycle(counts: GrowthCounts): LifecycleStage {
