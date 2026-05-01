@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import AgentProfile from "@/pages/agent-profile";
 import EventMode from "@/pages/event";
+import AdminIncidents from "@/pages/admin-incidents";
 
 const apiUrl = import.meta.env.VITE_API_URL ?? "";
 setBaseUrl(apiUrl);
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/agent/:slug" component={AgentProfile} />
       <Route path="/event" component={EventMode} />
+      <Route path="/admin/incidents" component={AdminIncidents} />
       <Route component={NotFound} />
     </Switch>
   );

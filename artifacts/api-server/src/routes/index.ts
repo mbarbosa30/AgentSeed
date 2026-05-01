@@ -5,6 +5,7 @@ import messagesRouter from "./messages";
 import communityRouter from "./community";
 import heartbeatRouter from "./heartbeat";
 import affiliateRouter from "./affiliate";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -16,6 +17,9 @@ router.use(heartbeatRouter);
 // Affiliate routes (e.g. `/agents/:slug/travel-stats`) likewise need to
 // land before the `/agents/:slug` parameterized routes.
 router.use(affiliateRouter);
+// Admin routes (`/admin/*`) need their own static prefix and must mount
+// before the catch-all `agentsRouter`.
+router.use(adminRouter);
 router.use(agentsRouter);
 router.use(messagesRouter);
 router.use(communityRouter);

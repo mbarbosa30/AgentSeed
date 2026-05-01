@@ -169,3 +169,30 @@ travel concierge.
 - `VIATOR_API_KEY` — enables live Viator search; otherwise demo mode.
 - `WANDERBIRD_VIATOR_PARTNER_ID` — partner id pinned on the seed agent.
 - `AFFILIATE_REDIRECT_ALLOWLIST` — host allowlist for the 302 redirect.
+
+## PagerDuty SRE-Agent integration (Task #25)
+
+Pages PagerDuty when ACP tip jobs get stuck or terminally fail and when the
+heartbeat worker stops ticking; reads triage notes back at `/admin/incidents`.
+
+**Schema additions:**
+- `tips.pd_incident_id` (text, nullable) — sentinel/ref to suppress repeat triggers and let the resolver find tips to clear.
+- New `platform_incidents` table — id, kind, dedup_key (UNIQUE), pd_incident_id, status (default `open`), summary, opened_at, resolved_at. Used for non-tip incidents (currently only `heartbeat-stale`).
+
+**Server flow (artifacts/api-server):**
+- `lib/pagerduty.ts` — Events API v2 trigger/resolve + REST GET /incidents/{id}+/notes for triage. `isPagerDutyConfigured()` keys off `PAGERDUTY_ROUTING_KEY`. All functions no-op + log-once when env unset.
+- `lib/acp-settlement.ts` `pagerTipScan` — runs alongside the settlement poller. Triggers on terminal-failure tips (failed/rejected/expired) without `pd_incident_id`, and on non-terminal tips whose `acp_updated_at` is older than `PAGERDUTY_ACP_STUCK_MS`. Auto-resolves once the tip reaches `completed`. Dedup key `acp-tip-{tipId}`.
+- `lib/acp-settlement.ts` `heartbeatStaleCheck` — only runs when `HEARTBEAT_SHARED_SECRET` is set. Triggers a singleton incident when the latest `messages.is_heartbeat=true` row is older than `PAGERDUTY_HEARTBEAT_STALE_MS`; auto-resolves when ticks resume. Dedup `heartbeat-worker-stale`.
+- `routes/admin.ts` — `GET /admin/incidents`, gated by `x-admin-secret` header matching `ADMIN_SHARED_SECRET`. Fail-closed 503 when secret unset (mirrors heartbeat.ts pattern). Pulls open tip + platform incidents and parallel-fetches PagerDuty triage notes when the REST token is configured.
+
+**UI:**
+- `pages/admin-incidents.tsx` — secret prompt → fetches `/admin/incidents` with the header. Renders incident list with status badges, context JSON, and triage-note bubbles. 30 s refetch interval.
+
+**Required/optional env:**
+- `PAGERDUTY_ROUTING_KEY` — Events API key. Without it, no incidents are paged (fail-closed).
+- `PAGERDUTY_API_TOKEN` — REST token for fetching triage notes (admin page hydrates without it).
+- `PAGERDUTY_ACP_STUCK_MS` (default 30 min, min 60 s).
+- `PAGERDUTY_HEARTBEAT_STALE_MS` (default 60 min, min 5 min).
+- `PAGERDUTY_HEARTBEAT_CHECK_MS` (default 5 min, min 30 s).
+- `ADMIN_SHARED_SECRET` — required for `/admin/incidents`.
+- `PUBLIC_APP_ORIGIN` — optional, deep-links incidents back into AgentSeed.

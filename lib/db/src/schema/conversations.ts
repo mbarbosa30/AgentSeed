@@ -35,6 +35,7 @@ export const tipsTable = pgTable("tips", {
   acpChainId: integer("acp_chain_id"),
   acpJobStatus: text("acp_job_status").default("none").notNull(),
   acpUpdatedAt: timestamp("acp_updated_at", { withTimezone: true }),
+  pdIncidentId: text("pd_incident_id"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

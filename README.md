@@ -98,6 +98,23 @@ pnpm --filter @workspace/api-spec run codegen
 pnpm -w run typecheck
 ```
 
+## PagerDuty SRE-Agent integration
+
+The API server pages PagerDuty when ACP tip settlements get stuck or fail
+terminally, and when the heartbeat worker stops ticking. Triage notes are
+written by the on-call SRE Agent in PagerDuty and read back at
+`/admin/incidents`.
+
+| Variable | Purpose |
+| --- | --- |
+| `PAGERDUTY_ROUTING_KEY` | Events API v2 integration key. **Without it, no incidents are paged** (fail-closed). |
+| `PAGERDUTY_API_TOKEN` | REST API token used to fetch incident triage notes. Optional — without it, the admin page still lists local incidents but skips note hydration. |
+| `PAGERDUTY_ACP_STUCK_MS` | How long an ACP tip job may sit in a non-terminal state before paging. Default `1800000` (30 min), minimum 60 s. |
+| `PAGERDUTY_HEARTBEAT_STALE_MS` | How long without a heartbeat before paging. Default `3600000` (60 min), minimum 5 min. Only checked when `HEARTBEAT_SHARED_SECRET` is set. |
+| `PAGERDUTY_HEARTBEAT_CHECK_MS` | Interval for the heartbeat-stale checker. Default `300000` (5 min). |
+| `ADMIN_SHARED_SECRET` | Required for `GET /admin/incidents` and the `/admin/incidents` page. The endpoint **fails closed with 503** when this is unset. |
+| `PUBLIC_APP_ORIGIN` | Optional. When set, paged incidents include a deep link back into AgentSeed. |
+
 ## License
 
 MIT
