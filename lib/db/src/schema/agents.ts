@@ -17,6 +17,8 @@ export const agentsTable = pgTable("agents", {
   firstTask: text("first_task"),
   parentSlug: text("parent_slug"),
   memoryHighlights: text("memory_highlights").array().notNull().default([]),
+  virtualsWalletAddress: text("virtuals_wallet_address"),
+  virtualsAgentId: text("virtuals_agent_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

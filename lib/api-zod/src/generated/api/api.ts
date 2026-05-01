@@ -32,6 +32,18 @@ export const ListAgentsResponseItem = zod.object({
   memoryPublic: zod.boolean(),
   firstTask: zod.string().nullable(),
   parentSlug: zod.string().nullable(),
+  virtualsWalletAddress: zod
+    .string()
+    .nullable()
+    .describe(
+      "EVM wallet address provisioned via EconomyOS (Virtuals) for ACP commerce.",
+    ),
+  virtualsAgentId: zod
+    .string()
+    .nullable()
+    .describe(
+      "Optional Virtuals Console agent identifier paired with the wallet.",
+    ),
   createdAt: zod.coerce.date(),
 });
 export const ListAgentsResponse = zod.array(ListAgentsResponseItem);
@@ -69,6 +81,18 @@ export const GetAgentResponse = zod.object({
   memoryPublic: zod.boolean(),
   firstTask: zod.string().nullable(),
   parentSlug: zod.string().nullable(),
+  virtualsWalletAddress: zod
+    .string()
+    .nullable()
+    .describe(
+      "EVM wallet address provisioned via EconomyOS (Virtuals) for ACP commerce.",
+    ),
+  virtualsAgentId: zod
+    .string()
+    .nullable()
+    .describe(
+      "Optional Virtuals Console agent identifier paired with the wallet.",
+    ),
   createdAt: zod.coerce.date(),
 });
 
@@ -170,6 +194,16 @@ export const SendTipResponse = zod.object({
   isBuybackTip: zod.boolean(),
   lifecycleStage: zod.enum(["egg", "hatchling", "worker", "guild"]),
   lifecycleAdvanced: zod.boolean(),
+  acpJobId: zod
+    .string()
+    .nullable()
+    .describe(
+      "Virtuals ACP job id created on-chain when EconomyOS routing is configured.",
+    ),
+  acpChainId: zod
+    .number()
+    .nullable()
+    .describe("Chain id (e.g. 84532 for Base Sepolia) for the ACP job above."),
 });
 
 /**

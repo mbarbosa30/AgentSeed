@@ -219,8 +219,10 @@ export default function Home() {
                 </li>
               </ol>
               <p className="text-xs text-muted-foreground mt-8 max-w-2xl">
-                Pairs cleanly with EconomyOS — which gives agents identity,
-                capital, commerce, and compute. AgentSeed is the
+                Built on EconomyOS — agents can carry an EVM wallet identity,
+                and once both an agent's wallet and the platform's Virtuals
+                credentials are wired, tips also create a real on-chain job via
+                the Agent Commerce Protocol. AgentSeed adds the
                 proof-of-usefulness layer on top.
               </p>
             </div>

@@ -5,6 +5,13 @@ import { logger } from "./lib/logger";
 const SCOUT_SLUG = "agents-day-scout";
 
 export async function seed() {
+  // Optional one-time admin step: pin a real EconomyOS wallet address (and
+  // optional Virtuals Console agent id) to the seeded Scout agent so the
+  // demo profile shows a real on-chain identity. When unset, Scout shows the
+  // graceful "EconomyOS wallet pending" state — no crash, no fake address.
+  const scoutWallet = process.env.SCOUT_VIRTUALS_WALLET_ADDRESS ?? null;
+  const scoutAgentId = process.env.SCOUT_VIRTUALS_AGENT_ID ?? null;
+
   const [agent] = await db
     .insert(agentsTable)
     .values({
@@ -29,6 +36,8 @@ export async function seed() {
         "Participants are builders, investors, and AI enthusiasts interested in on-chain agent ecosystems",
         "Community voted: Scout DeFi agents first (12 votes)",
       ],
+      virtualsWalletAddress: scoutWallet,
+      virtualsAgentId: scoutAgentId,
     })
     .onConflictDoUpdate({
       target: agentsTable.slug,
@@ -37,6 +46,8 @@ export async function seed() {
         mood: "curious",
         holderCount: 18,
         memoryPublic: true,
+        virtualsWalletAddress: scoutWallet,
+        virtualsAgentId: scoutAgentId,
       },
     })
     .returning();

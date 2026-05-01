@@ -425,6 +425,12 @@ components:
           type: ["string", "null"]
         parentSlug:
           type: ["string", "null"]
+        virtualsWalletAddress:
+          type: ["string", "null"]
+          description: EVM wallet address provisioned via EconomyOS (Virtuals) for ACP commerce.
+        virtualsAgentId:
+          type: ["string", "null"]
+          description: Optional Virtuals Console agent identifier paired with the wallet.
         createdAt:
           type: string
           format: date-time
@@ -442,6 +448,8 @@ components:
         - memoryPublic
         - firstTask
         - parentSlug
+        - virtualsWalletAddress
+        - virtualsAgentId
         - createdAt
 
     CreateAgentBody:
@@ -562,6 +570,12 @@ components:
           enum: [egg, hatchling, worker, guild]
         lifecycleAdvanced:
           type: boolean
+        acpJobId:
+          type: ["string", "null"]
+          description: Virtuals ACP job id created on-chain when EconomyOS routing is configured.
+        acpChainId:
+          type: ["integer", "null"]
+          description: Chain id (e.g. 84532 for Base Sepolia) for the ACP job above.
       required:
         - treasuryBalance
         - holderCount
@@ -570,6 +584,8 @@ components:
         - isBuybackTip
         - lifecycleStage
         - lifecycleAdvanced
+        - acpJobId
+        - acpChainId
 
     AddSupporterBody:
       type: object

@@ -74,5 +74,33 @@ lib/
 - Agent lifecycle stages: egg → hatchling → worker → guild
 - `lib/api-zod/src/index.ts` must NOT be overwritten by orval — keep manual export only
 - esbuild does NOT externalize `@google/*` (removed from external list in api-server/build.mjs)
+- esbuild **does** externalize the Virtuals SDK and its peers (`@virtuals-protocol/acp-node-v2`, `@account-kit/*`, `@alchemy/*`, `@aa-sdk/*`, `@privy-io/*`, `viem`, `ox`, `socket.io-client`, `eventsource`) so the bundle stays small and Privy worker code is loaded from `node_modules` at runtime.
+
+## EconomyOS / Virtuals ACP Integration
+
+**Discovery (verified against `os.virtuals.io/llms-full.txt`):**
+- There is **no** programmatic agent provisioning. Each ACP agent must be created via `acp agent create` (browser OAuth) or at `app.virtuals.io/acp/new`, then a Privy signer is added with `acp agent add-signer`.
+- Per-agent runtime credentials are: `walletAddress`, Privy `walletId`, Privy `signerPrivateKey`, plus an optional `builderCode`. There is no flat API key.
+- The smallest tip→on-chain hop is `acpAgent.createFundTransferJob(chainId, { providerAddress, evaluatorAddress, expiredAt, description })` which returns a `bigint` job id immediately. Settlement (setBudget → fund → submit → complete) is multi-step and runs out-of-band.
+
+**How this app uses it:**
+- One **platform-level** AcpAgent acts as the ACP Client for all tips (configured via env vars below). Each AgentSeed agent acts as the **Provider** when its `virtualsWalletAddress` is set.
+- `artifacts/api-server/src/lib/acp.ts` lazy-imports the SDK only when env is configured. All failures are logged and swallowed — tips always succeed in-app.
+- Tip route (`POST /api/agents/:slug/tip`) calls `tryCreateTipJob(...)` after persisting the tip; the returned `jobId` is stored on `tips.acp_job_id` and surfaced in the response (`acpJobId`, `acpChainId`) and in the toast (`⚡ EconomyOS job #...`).
+- Multi-step settlement is **not** automated — it is intended to be driven by the `acp` CLI after the demo. This is documented honestly in the UI copy.
+
+**Required env vars (all optional — feature degrades gracefully if missing):**
+- `VIRTUALS_PLATFORM_WALLET_ADDRESS` — platform Client wallet address (`0x...`)
+- `VIRTUALS_PLATFORM_WALLET_ID` — Privy wallet id for the above
+- `VIRTUALS_PLATFORM_SIGNER_KEY` — Privy signer private key (`0x...`)
+- `VIRTUALS_BUILDER_CODE` — optional builder attribution code
+- `VIRTUALS_CHAIN_ID` — `84532` (Base Sepolia, default) or `8453` (Base mainnet)
+- `SCOUT_VIRTUALS_WALLET_ADDRESS` — Provider wallet pinned to seeded Scout agent
+- `SCOUT_VIRTUALS_AGENT_ID` — optional Virtuals Console agent id paired with above
+- `VITE_VIRTUALS_CHAIN_ID` — frontend hint (`84532` default → "Basescan (Sepolia)" link, `8453` → "Basescan" mainnet link). Should match `VIRTUALS_CHAIN_ID` on the server.
+
+**Schema additions:**
+- `agents.virtuals_wallet_address` (text, nullable), `agents.virtuals_agent_id` (text, nullable)
+- `tips.acp_job_id` (text, nullable), `tips.acp_chain_id` (integer, nullable)
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

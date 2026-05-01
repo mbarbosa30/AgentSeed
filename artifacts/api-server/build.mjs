@@ -99,6 +99,17 @@ async function buildAll() {
       "puppeteer",
       "puppeteer-core",
       "electron",
+      // Virtuals EconomyOS SDK and its heavy peers — keep external so esbuild
+      // does not try to inline viem/alchemy/privy worker code into the bundle.
+      "@virtuals-protocol/acp-node-v2",
+      "@account-kit/*",
+      "@alchemy/*",
+      "@aa-sdk/*",
+      "@privy-io/*",
+      "viem",
+      "ox",
+      "socket.io-client",
+      "eventsource",
     ],
     sourcemap: "linked",
     plugins: [

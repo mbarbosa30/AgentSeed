@@ -45,6 +45,16 @@ export interface Agent {
   firstTask: string | null;
   /** @nullable */
   parentSlug: string | null;
+  /**
+   * EVM wallet address provisioned via EconomyOS (Virtuals) for ACP commerce.
+   * @nullable
+   */
+  virtualsWalletAddress: string | null;
+  /**
+   * Optional Virtuals Console agent identifier paired with the wallet.
+   * @nullable
+   */
+  virtualsAgentId: string | null;
   createdAt: string;
 }
 
@@ -119,6 +129,16 @@ export interface TreasuryInfo {
   isBuybackTip: boolean;
   lifecycleStage: TreasuryInfoLifecycleStage;
   lifecycleAdvanced: boolean;
+  /**
+   * Virtuals ACP job id created on-chain when EconomyOS routing is configured.
+   * @nullable
+   */
+  acpJobId: string | null;
+  /**
+   * Chain id (e.g. 84532 for Base Sepolia) for the ACP job above.
+   * @nullable
+   */
+  acpChainId: number | null;
 }
 
 export interface AddSupporterBody {

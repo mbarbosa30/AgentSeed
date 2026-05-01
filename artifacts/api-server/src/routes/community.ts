@@ -13,6 +13,8 @@ import {
   GetAgentStatsParams,
 } from "@workspace/api-zod";
 import { progressLifecycle } from "../lib/lifecycle";
+import { tryCreateTipJob } from "../lib/acp";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
@@ -162,11 +164,31 @@ router.post("/agents/:slug/tip", async (req, res) => {
     return;
   }
 
+  // Best-effort: route the tip through Virtuals' Agent Commerce Protocol
+  // when the platform credentials and the agent's wallet are configured.
+  // Always returns null instead of throwing if anything is missing/fails,
+  // so the in-app tip flow stays rock-solid.
+  const acpResult = await tryCreateTipJob({
+    agentWalletAddress: agent.virtualsWalletAddress,
+    fromHandle: body.fromHandle ?? null,
+    amount: body.amount,
+    agentName: agent.name,
+  });
+
   await db.insert(tipsTable).values({
     agentId: agent.id,
     fromHandle: body.fromHandle ?? null,
     amount: body.amount,
+    acpJobId: acpResult?.jobId ?? null,
+    acpChainId: acpResult?.chainId ?? null,
   });
+
+  if (acpResult) {
+    logger.info(
+      { slug, jobId: acpResult.jobId, chainId: acpResult.chainId, amount: body.amount },
+      "ACP tip job created",
+    );
+  }
 
   const allTips = await db
     .select()
@@ -220,6 +242,8 @@ router.post("/agents/:slug/tip", async (req, res) => {
     isBuybackTip,
     lifecycleStage: progression.stage,
     lifecycleAdvanced: progression.advanced,
+    acpJobId: acpResult?.jobId ?? null,
+    acpChainId: acpResult?.chainId ?? null,
   });
 });
 

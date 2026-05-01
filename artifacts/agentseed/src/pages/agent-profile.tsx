@@ -14,6 +14,9 @@ import {
   QrCode,
   Lock,
   TrendingUp,
+  Wallet,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -46,6 +49,17 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
 const apiBase = import.meta.env.VITE_API_URL ?? "";
+
+const VIRTUALS_CHAIN_ID = Number(import.meta.env.VITE_VIRTUALS_CHAIN_ID ?? 84532);
+const explorerForChain = (chainId: number): string => {
+  switch (chainId) {
+    case 8453:
+      return "https://basescan.org";
+    case 84532:
+    default:
+      return "https://sepolia.basescan.org";
+  }
+};
 
 export default function AgentProfile() {
   const [, params] = useRoute("/agent/:slug");
@@ -123,6 +137,7 @@ export default function AgentProfile() {
         const extras: string[] = [];
         if (data.isBuybackTip) extras.push("🔥 Buyback burn triggered");
         if (data.lifecycleAdvanced) extras.push(`🌱 Evolved to ${data.lifecycleStage}`);
+        if (data.acpJobId) extras.push(`⚡ EconomyOS job #${data.acpJobId}`);
         toast({
           title: `Tip sent! Treasury: ${data.treasuryBalance.toFixed(2)}`,
           description: extras.length > 0
@@ -298,6 +313,46 @@ export default function AgentProfile() {
               <QRCodeSVG value={profileUrl} size={128} />
             </div>
           )}
+
+          <div
+            className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+            data-testid="row-economyos-identity"
+          >
+            <Wallet className="w-3.5 h-3.5 text-primary" />
+            <span className="font-medium text-foreground">Identity by EconomyOS</span>
+            {agent.virtualsWalletAddress ? (
+              <>
+                <span className="font-mono text-[11px] truncate max-w-[180px] sm:max-w-[260px]">
+                  {agent.virtualsWalletAddress}
+                </span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(agent.virtualsWalletAddress!);
+                    toast({ title: "Wallet address copied" });
+                  }}
+                  title="Copy wallet address"
+                  data-testid="button-copy-wallet"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+                <a
+                  href={`${explorerForChain(VIRTUALS_CHAIN_ID)}/address/${agent.virtualsWalletAddress}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 underline-offset-4 hover:underline"
+                  data-testid="link-basescan"
+                >
+                  {VIRTUALS_CHAIN_ID === 8453 ? "Basescan" : "Basescan (Sepolia)"}
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </>
+            ) : (
+              <span className="italic">EconomyOS wallet pending — tips route in-app only.</span>
+            )}
+          </div>
         </div>
 
         <Tabs defaultValue="chat" className="w-full">

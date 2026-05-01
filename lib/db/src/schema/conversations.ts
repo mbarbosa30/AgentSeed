@@ -31,6 +31,8 @@ export const tipsTable = pgTable("tips", {
     .references(() => agentsTable.id, { onDelete: "cascade" }),
   fromHandle: text("from_handle"),
   amount: real("amount").notNull(),
+  acpJobId: text("acp_job_id"),
+  acpChainId: integer("acp_chain_id"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
