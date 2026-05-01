@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, asc } from "drizzle-orm";
-import { db, agentsTable, messagesTable, tipsTable, supportersTable } from "@workspace/db";
+import { db, agentsTable, messagesTable } from "@workspace/db";
 import {
   GetAgentMessagesParams,
   GetAgentMessagesQueryParams,
@@ -8,17 +8,9 @@ import {
   SendAgentMessageBody,
 } from "@workspace/api-zod";
 import { ai } from "@workspace/integrations-gemini-ai";
-import { progressLifecycle } from "../lib/lifecycle";
-import { maybeSummarizeAndStore, shouldSummarize } from "../lib/summarize";
+import { applyAgentReplyUpdate } from "../lib/reply-update";
 
 const router: IRouter = Router();
-
-function pickMood(messageCount: number, holderCount: number, tipCount: number): "focused" | "curious" | "confident" | "generous" | "survival" {
-  if (holderCount >= 50 || tipCount >= 20) return "confident";
-  if (holderCount >= 20 || tipCount >= 10) return "generous";
-  if (messageCount > 20 || holderCount >= 5) return "curious";
-  return "focused";
-}
 
 router.get("/agents/:slug/messages", async (req, res) => {
   const { slug } = GetAgentMessagesParams.parse(req.params);
@@ -144,43 +136,7 @@ router.post("/agents/:slug/messages", async (req, res) => {
       content: fullContent,
     });
 
-    const totalMessages = await db.$count(
-      messagesTable,
-      eq(messagesTable.agentId, agent.id),
-    );
-
-    const allTips = await db.$count(tipsTable, eq(tipsTable.agentId, agent.id));
-    const newMood = pickMood(totalMessages, agent.holderCount, allTips);
-
-    const progression = progressLifecycle(agent.lifecycleStage, {
-      messageCount: totalMessages,
-      holderCount: agent.holderCount,
-      tipCount: allTips,
-    });
-
-    const existingHighlights = agent.memoryHighlights ?? [];
-    let updatedHighlights = existingHighlights;
-
-    if (progression.advanced && progression.highlight) {
-      updatedHighlights = [...updatedHighlights, progression.highlight].slice(-10);
-    } else if (totalMessages % 10 === 0) {
-      const memHighlight = `Task progress: responded to "${body.content.slice(0, 60)}${body.content.length > 60 ? "…" : ""}"`;
-      updatedHighlights = [...updatedHighlights, memHighlight].slice(-10);
-    }
-
-    await db
-      .update(agentsTable)
-      .set({
-        mood: newMood,
-        lifecycleStage: progression.stage,
-        treasuryBalance: agent.treasuryBalance + progression.treasuryReward,
-        memoryHighlights: updatedHighlights,
-      })
-      .where(eq(agentsTable.id, agent.id));
-
-    if (shouldSummarize(totalMessages)) {
-      void maybeSummarizeAndStore(agent, totalMessages);
-    }
+    await applyAgentReplyUpdate(agent, { contextSnippet: body.content });
   }
 
   res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);

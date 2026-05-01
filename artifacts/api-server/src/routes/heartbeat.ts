@@ -4,7 +4,6 @@ import {
   db,
   agentsTable,
   messagesTable,
-  tipsTable,
   type Agent,
 } from "@workspace/db";
 import {
@@ -12,7 +11,7 @@ import {
   PostHeartbeatParams,
   GetHeartbeatCandidatesQueryParams,
 } from "@workspace/api-zod";
-import { progressLifecycle } from "../lib/lifecycle";
+import { applyAgentReplyUpdate } from "../lib/reply-update";
 import { logger } from "../lib/logger";
 import { rateLimit } from "../lib/rate-limit";
 
@@ -56,13 +55,6 @@ const heartbeatLimiter = rateLimit({
   },
 });
 
-function pickMood(holderCount: number, tipCount: number): "focused" | "curious" | "confident" | "generous" | "survival" {
-  if (holderCount >= 50 || tipCount >= 20) return "confident";
-  if (holderCount >= 20 || tipCount >= 10) return "generous";
-  if (holderCount >= 5 || tipCount >= 3) return "curious";
-  return "focused";
-}
-
 router.post(
   "/agents/:slug/heartbeat",
   requireHeartbeatSecret,
@@ -104,44 +96,25 @@ router.post(
       })
       .returning();
 
-    // Heartbeats count toward growth too — they prove the agent is alive
-    // between user sessions, which is exactly what the lifecycle is meant
-    // to reward. We mirror the same update path that user replies use.
-    const totalMessages = await db.$count(messagesTable, eq(messagesTable.agentId, agent.id));
-    const totalTips = await db.$count(tipsTable, eq(tipsTable.agentId, agent.id));
-    const progression = progressLifecycle(agent.lifecycleStage, {
-      messageCount: totalMessages,
-      holderCount: agent.holderCount,
-      tipCount: totalTips,
+    // Heartbeats grow agents the same way user replies do. We delegate
+    // to the shared reply-update helper so lifecycle/mood/memory and
+    // periodic summarization all follow the exact same path used by
+    // `routes/messages.ts`. The thought itself is the context snippet
+    // that may seed a "task progress" memory highlight every 10 msgs.
+    const update = await applyAgentReplyUpdate(agent, {
+      contextSnippet: thought,
     });
-    const newMood = pickMood(agent.holderCount, totalTips);
-
-    const existingHighlights = agent.memoryHighlights ?? [];
-    const updatedHighlights =
-      progression.advanced && progression.highlight
-        ? [...existingHighlights, progression.highlight].slice(-10)
-        : existingHighlights;
-
-    await db
-      .update(agentsTable)
-      .set({
-        mood: newMood,
-        lifecycleStage: progression.stage,
-        treasuryBalance: agent.treasuryBalance + progression.treasuryReward,
-        memoryHighlights: updatedHighlights,
-      })
-      .where(eq(agentsTable.id, agent.id));
 
     logger.info(
-      { slug, messageId: inserted.id, lifecycleStage: progression.stage },
+      { slug, messageId: inserted.id, lifecycleStage: update.lifecycleStage },
       "Heartbeat thought posted",
     );
 
     res.status(201).json({
       messageId: inserted.id,
       createdAt: inserted.createdAt.toISOString(),
-      lifecycleStage: progression.stage,
-      lifecycleAdvanced: progression.advanced,
+      lifecycleStage: update.lifecycleStage,
+      lifecycleAdvanced: update.lifecycleAdvanced,
     });
   },
 );
